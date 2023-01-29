@@ -157,6 +157,7 @@ L.Control.textbox = L.Control.extend({
 		text.innerHTML += "<h2>Comments?</h2>";
 		text.innerHTML += "<p>Message tashi on the Sonic Frontiers Speedrunning discord with any comments or questions.</p>";
 		text.innerHTML += "<p>Thanks to everyone at the Sonic Frontiers Speedrunning discord.</p>";
+		text.innerHTML += "<p><a href='https://github.com/tashiww/sonimap' target='_blank'>Source code</a></p>";
 		return text;
 		},
 
