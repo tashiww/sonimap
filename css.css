@@ -1,0 +1,93 @@
+@font-face {
+	font-family: 'axis';
+	src: url('AxisCondProN-B.otf');
+}
+* { font-family: 'axis', sans-serif; }
+#map {
+	height: calc(100vh - 20px);
+}
+.markers_invert {
+	filter: invert(1);
+}
+.menu ul {
+	list-style-type: none;
+	padding: 0px;
+}
+.menu li {
+	background-color: rgba(255, 255, 255, 0.8);
+	border-radius: 5px;
+	padding: 5px;
+	text-align: center;
+	user-select: none;
+	cursor: pointer;
+	margin: 5px 0;
+	box-shadow: rgba(0, 0, 0, .2) 2px 2px 4px;
+}
+.menu li:hover {
+	background-color: rgba(220, 220, 220, 0.8);
+}
+
+.mouseposition {
+	background-color: rgba(255, 255, 255, .8);
+	padding: 2px 5px;
+	border-radius: 5px;
+	box-shadow: rgba(0, 0, 0, .2) 2px 2px 4px;
+}
+
+.leaflet-popup h1 {
+margin: 4px 0;
+text-align: center;
+}
+.leaflet-popup p {
+	font-family: monospace;
+	font-size: 1.2em;
+	margin: 6px 0;
+}
+.leaflet-popup .emphasize {
+	font-weight: bold;
+}
+
+#title {
+	border: 2px solid rgba(0, 0, 0, .2);
+	text-align: center;
+	margin-left: 60px;
+	margin-top: -65px;
+	padding: 5px;
+	border-radius: 10px;
+	background-color: rgba(255, 255, 255, .8)
+}
+#title:hover {
+	width: 440px;
+}
+#title h1 {
+	padding: 0px 10px;
+	margin: 0;
+}
+#title>h2, #title>p {
+	display: none;
+	text-align: left;
+	padding: 0px 20px;
+	margin: 0;
+}
+#title>h2 {
+	margin: 4px 0 0 0;
+}
+#title:hover>h2, #title:hover>p {
+	display: block;
+}
+#title p:last-child {
+	padding-bottom: 10px;
+}
+#title p {
+	font-family: sans-serif;
+}
+
+.menu .selected {
+	background-color: rgba(180, 200, 250, .7);
+}
+
+.leaflet-control-layers-list:before {
+	content: 'Object Types';
+	font-size: 2em;
+	text-align: center;
+}
