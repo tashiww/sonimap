@@ -97,7 +97,6 @@ function loadMap(stage_name) {
     },
 
     onAdd: function() {
-			console.log(stage_name);
       var menu = L.DomUtil.create('div', 'menu');
       menu.innerHTML = '<ul>' +
 				'<li class=' + ( stage_name == 'w1r03' ? '"selected"' : '""' ) + ' onclick="loadMap(\'w1r03\')">Kronos</li>' +
@@ -172,6 +171,14 @@ L.Control.textbox = L.Control.extend({
 
 
 async function get_marker_data(map, stage_name) {
+
+  function checkImage(src, bad) {
+    var icon = new Image();
+    icon.src = src;
+    icon.onerror = bad;
+  }
+
+	function getMarker(item, file) {
   const iconList = {
     BlockObject: {
       iconUrl: './icons/character_15.png',
@@ -207,9 +214,8 @@ async function get_marker_data(map, stage_name) {
     Knuckles: {
       iconUrl: './icons/character2_01.png',
     },
-    Tails: {
-      iconUrl: './icons/character2_02.png',
-    },
+    Tails: { iconUrl: './icons/character2_02.png', },
+    StartPosition: { iconUrl: './icons/cockpit_12.png', },
     GiantTower: {
       iconUrl: './icons/character2_15.png',
     },
@@ -221,13 +227,61 @@ async function get_marker_data(map, stage_name) {
     },
   };
 
-  function checkImage(src, bad) {
-    var icon = new Image();
-    icon.src = src;
-    icon.onerror = bad;
-  }
 
+	const coords = sf_remap([item.Position[0], -item.Position[2]], stage_name);
+		let valid_image = true;
+	              var iconUrl = iconList[item.TypeName]?.iconUrl;
+		if (!iconUrl) {
+			// circle marker path
+
+			return (
+              L.circleMarker(coords, {
+				  radius: 10,
+				  color: '#000000',
+				  weight: 1,
+				  opacity: 0.8,
+				  fillOpacity: 0.7,
+				  fillColor: colorList[item.TypeName],
+                })
+              );
+		}
+		else {
+              checkImage(iconUrl, function() {
+				  valid_image = false;
+              });
+
+
+		if ( !valid_image ) {
+			console.log('no img');
+		}
+			var size = 30;
+			if (item.TypeName == 'PortalBit' && file.includes('boss')) {
+				size = 20;
+			}
+			
+		return (
+              L.canvasMarker(coords, {
+                img: {
+                  url: iconUrl,
+                  size: [size, size],
+                }
+              })
+		);
+		}
+ 	
+	}
+function getPopup(item, filename) {
+return (
+                '<h1>' + item.ObjectName + '</h1>' +
+                '<p><span class="emphasize">position:</span> ' +
+                Math.round(item.Position[0]) + ", " + Math.round(item.Position[1]) + ", " +
+                Math.round(item.Position[2]) + '</p>' +
+                '<p><span class="emphasize">file:</span> ' + filename + "</p>" +
+                '<p><span class="emphasize">params:</span><br>' + item.ParameterData +
+                '</p>');
+}
   const layerList = {};
+  const colorList = {};
   var fetches = [];
   fetch('./json_data/' + stage_name + '/file_list.txt').then((response) => response.text())
     .then((json_files) => {
@@ -237,38 +291,48 @@ async function get_marker_data(map, stage_name) {
           .then((response) => response.json())
           .then((json) => {
             json.forEach((item) => {
-              var iconUrl = iconList[item.TypeName]?.iconUrl ?? './icons/default.png';
-              checkImage(iconUrl, function() {
-                iconUrl = './icons/default.png';
-              });
+			  if (!layerList.hasOwnProperty(item.TypeName)) {
+				layerList[item.TypeName] = L.layerGroup();
+				const randomColor = Math.floor(Math.random()*16777215).toString(16);
+				  colorList[item.TypeName] = '#' + randomColor;
+			  }
+				const marker = getMarker(item, file, colorList[item.TypeName]);
+				const popup = getPopup(item, file.replace('.json', ''));
 
-              if (!layerList.hasOwnProperty(item.TypeName)) {
-                layerList[item.TypeName] = L.layerGroup();
-              }
-
-              L.canvasMarker(sf_remap([item.Position[0], -item.Position[2]], stage_name), {
-                img: {
-                  url: iconUrl,
-                  size: [30, 30],
-                }
-              }).bindPopup(
-                '<h1>' + item.ObjectName + '</h1>' +
-                '<p><span class="emphasize">position:</span> ' +
-                Math.round(item.Position[0]) + ", " + Math.round(item.Position[1]) + ", " +
-                Math.round(item.Position[2]) + '</p>' +
-                '<p><span class="emphasize">file:</span> ' + file.replace('.json', '') + "</p>" +
-                '<p><span class="emphasize">params:</span><br>' + item.ParameterData +
-                '</p>'
-              ).addTo(layerList[item.TypeName]);
+             marker.bindPopup(popup).addTo(layerList[item.TypeName]);
             });
           }));
       });
     }).then(() => {
       Promise.all(fetches).then(function() {
         addControl(map, layerList);
+map.on({
+	overlayadd: function(e) {
+		const layerName = e.name;
+		const markerType = getMarkerType(e.layer._layers);
+		if (markerType == 'circle') {
+			const bgColor = colorList[layerName] + '88';
+			$("label").filter(function() { return ($(this).text() === ' '+layerName);}).css('background-color', bgColor);
+		}
+	},
+	overlayremove: function(e) {
+		const layerName = e.name;
+		$("label").filter(function() { return ($(this).text() === ' '+layerName);}).css('background-color', 'white');
+	},
+});
       });
     });
 
+}
+
+function getMarkerType(layers) {
+	const id = Object.keys(layers)[0];
+	if (layers[id].options.hasOwnProperty('color')) {
+		return 'circle';
+	}
+	else {
+		return 'image';
+	}
 }
 
 
@@ -282,7 +346,6 @@ function addControl(map, markers) {
 
 function setMap(name) {
   loadImage(name);
-  console.log(name);
 }
 
 
@@ -290,3 +353,4 @@ const searchParams = new URLSearchParams(window.location.search);
 const stage_name = MapNames[searchParams.get('map')] ?? 'w1r03';
 
 loadMap(stage_name);
+
