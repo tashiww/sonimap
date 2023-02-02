@@ -233,10 +233,23 @@ async function get_marker_data(map, stage_name) {
 	              var iconUrl = iconList[item.TypeName]?.iconUrl;
 		if (!iconUrl) {
 			// circle marker path
+			var radius = 8;
+			if (item.TypeName == 'Gismo_exp') {
+				const qty = parseInt(item.Quantity);
+				if (qty >= 15)  {
+					radius = 10;
+				}
+				else if (qty >=8) {
+					radius = 8;
+				}
+				else {
+					radius = 6;
+				}
+			}
 
 			return (
               L.circleMarker(coords, {
-				  radius: 10,
+				  radius: radius,
 				  color: '#000000',
 				  weight: 1,
 				  opacity: 0.8,
@@ -271,29 +284,50 @@ async function get_marker_data(map, stage_name) {
  	
 	}
 function getPopup(item, filename) {
+		var model = item.Model ? '<p><span class="emphasize">model: </span>' + item.Model + '</p>' : '';
+		var contents = item.Contents ? '<p><span class="emphasize">contents: </span>' + item.Contents + '</p>' : '';
+		var quantity = '';
+		if (item.TypeName.includes('rings')) {
+			quantity = '<p><span class="emphasize">quantity: </span>' + 
+							(parseInt(item.Quantity) + item.Quantity2*10) + ' rings (' + item.Quantity2 + ' big, ' + item.Quantity + ' small)</p>';
+		}
+	else if (item.TypeName.includes('Gismo_')) {
+			quantity = item.Quantity ? '<p><span class="emphasize">quantity: </span>' + 
+							(	item.Contents == 'exp' ? item.Quantity*200 : item.Quantity) + '</p>' : '';
+		}
+
+	const extraParams = item.Model ? '<p>' + JSON.stringify(item.ParameterValues, null, 2) + '</p>' : '';
 return (
                 '<h1>' + item.ObjectName + '</h1>' +
                 '<p><span class="emphasize">position:</span> ' +
                 Math.round(item.Position[0]) + ", " + Math.round(item.Position[1]) + ", " +
                 Math.round(item.Position[2]) + '</p>' +
-                '<p><span class="emphasize">file:</span> ' + filename + "</p>" +
-                '<p><span class="emphasize">params:</span><br>' + item.ParameterData +
-                '</p>');
+                '<p><span class="emphasize">file:</span> ' + filename.split('/')[1] + "</p>" +
+				model + 
+				contents +
+				quantity +
+                '<p><span class="emphasize">params:</span><br>' + item.ParameterData + '</p>' + 
+				extraParams 
+);
 }
   const layerList = {};
   const colorList = {};
   var fetches = [];
-  fetch('./json_data/' + stage_name + '/file_list.txt').then((response) => response.text())
+	var exp_boxes = [];
+  fetch('./json_data/file_list.txt').then((response) => response.text())
     .then((json_files) => {
-      json_files.split("\n").filter(Boolean).forEach(file => {
+      json_files.split("\n").filter(Boolean).filter(x => x.includes(stage_name)).forEach(file => {
         fetches.push(
-          fetch('./json_data/' + stage_name + '/' + file)
+          fetch('./json_data/' + file)
           .then((response) => response.json())
           .then((json) => {
             json.forEach((item) => {
+				if (item.Contents == 'exp') {
+					exp_boxes.push({qty: item.Quantity, pos: item.Position, name: item.ObjectName});
+				}
 			  if (!layerList.hasOwnProperty(item.TypeName)) {
 				layerList[item.TypeName] = L.layerGroup();
-				const randomColor = Math.floor(Math.random()*16777215).toString(16);
+				const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
 				  colorList[item.TypeName] = '#' + randomColor;
 			  }
 				const marker = getMarker(item, file, colorList[item.TypeName]);
