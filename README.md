@@ -7,3 +7,4 @@ sonic frontiers map
 * base map images from sonic frontiers game files
 * icons
 * json data parsed from .gedit files
+* jquery
