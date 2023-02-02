@@ -23,8 +23,8 @@ function sf_remap(coords, stage_name, mouse = false) {
       scale_factor: 1.2573
     },
     w3r01: {
-      origin: [2050, 2040],
-      scale_factor: 1.022
+      origin: [2040, 2045],
+      scale_factor: 1.007
     },
     w1r05: {
       origin: [2029, 1661],
@@ -87,7 +87,7 @@ function loadMap(stage_name) {
     [4096, 4096]
   ];
 
-  var img = L.imageOverlay('./base_img/' + stage_name + '.png', bounds);
+  var img = L.imageOverlay('./base_img/' + stage_name + '.webp', bounds);
   img.addTo(map);
 
   let MapSwitcher = L.Control.extend({
@@ -145,14 +145,14 @@ L.Control.textbox = L.Control.extend({
 			
 		var text = L.DomUtil.create('div');
 		text.id = "title";
-		text.innerHTML = "<h1>SoniMap v0.3</h1>";
+		text.innerHTML = "<h1>SoniMap v0.3.2</h1>";
 		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
 		text.innerHTML += "<h2>Limitations</h2>";
 		text.innerHTML += "<p>All map data is extracted from .gedit files, which I don't fully understand, so some data may be presented incorrectly. " +
 				"Certain objects, like experience crates and attack/defense crates, aren't properly differentiated because of this. " +
-				"Object coordinates should be accurate, but map placement may vary by ~1% due to not understanding map bounds and scaling.</p>";
+				"Object coordinates should be accurate, but map placement may vary slightly due to not understanding map bounds and scaling.</p>";
 		text.innerHTML += "<h2>Comments?</h2>";
 		text.innerHTML += "<p>Message tashi on the Sonic Frontiers Speedrunning discord with any comments or questions.</p>";
 		text.innerHTML += "<p>Thanks to everyone at the Sonic Frontiers Speedrunning discord.</p>";
