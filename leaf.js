@@ -144,11 +144,7 @@ L.Control.textbox = L.Control.extend({
 			
 		var text = L.DomUtil.create('div');
 		text.id = "title";
-<<<<<<< HEAD
-		text.innerHTML = "<h1>SoniMap v0.3.3</h1>";
-=======
 		text.innerHTML = "<h1>SoniMap v0.3.4</h1>";
->>>>>>> origin/adding_icons
 		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
