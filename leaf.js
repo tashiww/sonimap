@@ -62,12 +62,11 @@ L.Map.addInitHook(function() {
 
 function loadMap(stage_name) {
 
-  if ('URLSearchParams' in window) {
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('map', Object.keys(MapNames).find(key => MapNames[key] === stage_name));
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
-  }
+
   var container = mapsPlaceholder.pop();
   if (container != null) {
     container.off();
@@ -145,7 +144,7 @@ L.Control.textbox = L.Control.extend({
 			
 		var text = L.DomUtil.create('div');
 		text.id = "title";
-		text.innerHTML = "<h1>SoniMap v0.3.2</h1>";
+		text.innerHTML = "<h1>SoniMap v0.3.4</h1>";
 		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
@@ -179,6 +178,27 @@ async function get_marker_data(map, stage_name) {
   }
 
 	function getMarker(item, file) {
+		let medalIcon, strayIcon;
+	switch(stage_name) {
+		case 'w1r03':
+			medalIcon = './icons/character_04.png';
+			strayIcon = './icons/cockpit_08.png';
+			break;
+		case 'w2r01':
+			medalIcon = './icons/character_05.png';
+			strayIcon = './icons/cockpit_07.png';
+			break;
+		case 'w3r01':
+			medalIcon = './icons/character_06.png';
+			strayIcon = './icons/cockpit_06.png';
+			break;
+		case 'w1r04':
+			medalIcon = './icons/character_04.png';
+			strayIcon = './icons/cockpit_08.png';
+			break;
+	}
+
+
   const iconList = {
     BlockObject: {
       iconUrl: './icons/character_15.png',
@@ -215,6 +235,8 @@ async function get_marker_data(map, stage_name) {
       iconUrl: './icons/character2_01.png',
     },
     Tails: { iconUrl: './icons/character2_02.png', },
+    SequenceItem: { iconUrl: strayIcon, },
+    DroppedItem: { iconUrl: medalIcon, },
     StartPosition: { iconUrl: './icons/cockpit_12.png', },
     GiantTower: {
       iconUrl: './icons/character2_15.png',
@@ -340,18 +362,51 @@ return (
     }).then(() => {
       Promise.all(fetches).then(function() {
         addControl(map, layerList);
-map.on({
+		const selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
+		  selectedMarkers.forEach((marker) => {
+			  if(layerList.hasOwnProperty(marker)) {
+				  layerList[marker].addTo(map);
+			  }
+		  });
+				$("label").filter(function() { return (selectedMarkers.includes($(this).text().trim()));}).each(function() {
+					const layerName = $(this).text().trim();
+					const markerType = getMarkerType(layerList[layerName]._layers);
+					const bgColor = (markerType === 'circle') ? colorList[layerName] : '#ffff88';
+					$(this).css('background-color', bgColor + '88');
+				});
+		  addLayerInfoControl(map, layerList, selectedMarkers);
+
+
+	map.on({
 	overlayadd: function(e) {
 		const layerName = e.name;
 		const markerType = getMarkerType(e.layer._layers);
-		if (markerType == 'circle') {
-			const bgColor = colorList[layerName] + '88';
-			$("label").filter(function() { return ($(this).text() === ' '+layerName);}).css('background-color', bgColor);
-		}
+		const bgColor = (markerType === 'circle') ? colorList[layerName] : '#ffff88';
+		$("label").filter(function() { return ($(this).text() === ' '+layerName);}).css('background-color', bgColor + '88');
+
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.append('markers', encodeURIComponent(layerName));
+    var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
+    history.pushState(null, '', newRelativePathQuery);
+
+		  addLayerInfoControl(map, layerList, selectedMarkers);
 	},
 	overlayremove: function(e) {
 		const layerName = e.name;
 		$("label").filter(function() { return ($(this).text() === ' '+layerName);}).css('background-color', 'white');
+		const searchParams = new URLSearchParams(window.location.search);
+		const markerArray = searchParams.getAll('markers');
+		searchParams.delete('markers');
+		markerArray.forEach(function(marker) {
+			if (marker != layerName) {
+				searchParams.append('markers', marker);
+			}
+		const selectedLayers = searchParams.getAll('markers');
+		  addLayerInfoControl(map, layerList, selectedLayers);
+
+		});
+    var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
+    history.pushState(null, '', newRelativePathQuery);
 	},
 });
       });
@@ -370,7 +425,7 @@ function getMarkerType(layers) {
 }
 
 
-function addControl(map, markers) {
+async function addControl(map, markers) {
   L.control.layers(null, markers, {
     collapsed: false,
     sortLayers: true,
@@ -382,6 +437,37 @@ function setMap(name) {
   loadImage(name);
 }
 
+function addLayerInfoControl(map, layers, selectedLayerNames) {
+	return 0;
+if (map._controlContainer.children[1].children.length > 1){
+	delete	map._controlContainer.children[1].children[1];
+}
+L.Control.textbox = L.Control.extend({
+		onAdd: function() {
+			
+		var text = L.DomUtil.create('div');
+		text.id = "layerinfo";
+		let html = "<ul>";
+		selectedLayerNames.forEach( (layerName) => {
+			if(layers.hasOwnProperty(layerName)) {
+			html += "<li>" + layerName + 
+				" (" + Object.keys(layers[layerName]._layers).length + ")</li>";
+			}
+		});
+		html += "</ul>";
+		text.innerHTML = html;
+		return text;
+		},
+
+	});
+	try {
+		map.removeControl(L.control.textbox);
+	}
+	catch { }
+	L.control.textbox = function(opts) { return new L.Control.textbox(opts);};
+	L.control.textbox({ position: 'topright'}).addTo(map);
+
+}
 
 const searchParams = new URLSearchParams(window.location.search);
 const stage_name = MapNames[searchParams.get('map')] ?? 'w1r03';
