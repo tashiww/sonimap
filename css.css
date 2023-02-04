@@ -91,3 +91,15 @@ text-align: center;
 	font-size: 2em;
 	text-align: center;
 }
+.leaflet-control-layers label {
+	border-radius: 6px;
+}
+
+div#layerinfo {
+	margin-right: 300px;
+	margin-top: calc(-100vh + 80px);
+}
+
+#layerinfo ul {
+	list-style-type: none;
+}
