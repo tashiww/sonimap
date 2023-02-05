@@ -76,7 +76,7 @@ function loadMap(stage_name) {
     crs: L.CRS.Simple,
     preferCanvas: true,
     attributionControl: false,
-    zoomSnap: 0.5,
+    zoomSnap: 0.25,
     minZoom: -3,
     maxZoom: 2
   }).setView([1975, 2203], -1.5);
@@ -144,7 +144,7 @@ L.Control.textbox = L.Control.extend({
 			
 		var text = L.DomUtil.create('div');
 		text.id = "title";
-		text.innerHTML = "<h1>SoniMap v0.3.4</h1>";
+		text.innerHTML = "<h1>SoniMap v0.3.5</h1>";
 		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
@@ -236,6 +236,10 @@ async function get_marker_data(map, stage_name) {
     },
     Tails: { iconUrl: './icons/character2_02.png', },
     SequenceItem: { iconUrl: strayIcon, },
+    Gismo_atk: { iconUrl: './icons/character_08.png', },
+    Gismo_def: { iconUrl: './icons/character_07.png', },
+    Gismo_exp: { iconUrl: './icons/character_09.png', },
+    Gismo_rings: { iconUrl: './icons/character_12.png', },
     DroppedItem: { iconUrl: medalIcon, },
     StartPosition: { iconUrl: './icons/cockpit_12.png', },
     GiantTower: {
@@ -362,7 +366,9 @@ return (
     }).then(() => {
       Promise.all(fetches).then(function() {
         addControl(map, layerList);
-		const selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
+		const searchParams = new URLSearchParams(window.location.search);
+		selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
+		  console.log(selectedMarkers);
 		  selectedMarkers.forEach((marker) => {
 			  if(layerList.hasOwnProperty(marker)) {
 				  layerList[marker].addTo(map);
@@ -374,7 +380,7 @@ return (
 					const bgColor = (markerType === 'circle') ? colorList[layerName] : '#ffff88';
 					$(this).css('background-color', bgColor + '88');
 				});
-		  addLayerInfoControl(map, layerList, selectedMarkers);
+		  addLayerInfoControl(map, layerList, selectedMarkers, colorList);
 
 
 	map.on({
@@ -388,8 +394,9 @@ return (
     searchParams.append('markers', encodeURIComponent(layerName));
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
+		let selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
 
-		  addLayerInfoControl(map, layerList, selectedMarkers);
+		  addLayerInfoControl(map, layerList, selectedMarkers, colorList);
 	},
 	overlayremove: function(e) {
 		const layerName = e.name;
@@ -401,8 +408,8 @@ return (
 			if (marker != layerName) {
 				searchParams.append('markers', marker);
 			}
-		const selectedLayers = searchParams.getAll('markers');
-		  addLayerInfoControl(map, layerList, selectedLayers);
+		let selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
+		  addLayerInfoControl(map, layerList, selectedMarkers, colorList);
 
 		});
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
@@ -437,20 +444,44 @@ function setMap(name) {
   loadImage(name);
 }
 
-function addLayerInfoControl(map, layers, selectedLayerNames) {
-	return 0;
-if (map._controlContainer.children[1].children.length > 1){
-	delete	map._controlContainer.children[1].children[1];
+function resetMarkers(map) {
+		$('div.leaflet-control-layers-overlays input:checkbox').removeAttr('checked');
+		$('div.leaflet-control-layers-overlays label').css('background-color', 'white');
+	$('#layerinfo').remove();
+		const searchParams = new URLSearchParams(window.location.search);
+		searchParams.delete('markers');
+    var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
+    history.pushState(null, '', newRelativePathQuery);
+
+	map.eachLayer(function (layer) {
+		if (!layer.hasOwnProperty('_url')) {
+			map.removeLayer(layer);
+		}
+	});
+
+
 }
+function addLayerInfoControl(map, layers, selectedLayerNames, colorList=null) {
+	if (selectedLayerNames.length == 0) {
+		return;
+	}
+	$('#layerinfo').remove();
+
 L.Control.textbox = L.Control.extend({
 		onAdd: function() {
 			
 		var text = L.DomUtil.create('div');
 		text.id = "layerinfo";
 		let html = "<ul>";
+			html += "<li id='clear_markers'>Clear All</li>";
 		selectedLayerNames.forEach( (layerName) => {
 			if(layers.hasOwnProperty(layerName)) {
-			html += "<li>" + layerName + 
+				let color = 'none';
+				if (colorList && getMarkerType(layers[layerName]._layers) == 'circle') {
+					color = colorList[layerName] + '88';
+				}
+
+			html += "<li style='background-color:" + color + "' >" + layerName + 
 				" (" + Object.keys(layers[layerName]._layers).length + ")</li>";
 			}
 		});
@@ -460,12 +491,12 @@ L.Control.textbox = L.Control.extend({
 		},
 
 	});
-	try {
-		map.removeControl(L.control.textbox);
-	}
-	catch { }
 	L.control.textbox = function(opts) { return new L.Control.textbox(opts);};
 	L.control.textbox({ position: 'topright'}).addTo(map);
+
+	$('#clear_markers').on('click', function() {
+		resetMarkers(map);
+	});
 
 }
 
