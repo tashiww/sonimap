@@ -3,8 +3,9 @@
 	src: url('AxisCondProN-B.otf');
 }
 * { font-family: 'axis', sans-serif; }
+body { margin: 0; }
 #map {
-	height: calc(100vh - 20px);
+	height: 100vh;
 }
 .markers_invert {
 	filter: invert(1);
@@ -96,10 +97,31 @@ text-align: center;
 }
 
 div#layerinfo {
-	margin-right: 300px;
-	margin-top: calc(-100vh + 80px);
+	position: absolute;
+	right: 250px;
+	background-color: rgba(255, 255, 255, .8);
+	border-radius: 10px;
+	border: 2px solid rgba(0,0,0, .2);
+	width: 180px;
 }
 
 #layerinfo ul {
 	list-style-type: none;
+	margin: 0px;
+	padding: 5px;
 }
+#layerinfo li {
+	border-radius: 6px;
+	padding: 2px 4px;
+	color: #333;
+}
+#layerinfo #clear_markers {
+	text-align: center;
+	padding: 2px;
+	background-color: #b4c8fab3;
+	cursor: pointer;
+	border-radius: 8px;
+	margin: 0px 10% 4px 10%;
+}
+
+
