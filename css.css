@@ -128,3 +128,15 @@ div#layerinfo {
 .leaflet-draw-actions a {
 	color: white;
 }
+
+.distance {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+.distance li:first-child {
+	padding: 0;
+}
+.distance li {
+	padding-left: 20px;
+}
