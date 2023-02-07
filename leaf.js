@@ -583,7 +583,7 @@ function setMap(name) {
   loadImage(name);
 }
 
-function resetMarkers(map) {
+function resetMarkers(map, layers, selectedLayerNames) {
 		$('div.leaflet-control-layers-overlays input:checkbox').removeAttr('checked');
 		$('div.leaflet-control-layers-overlays input').prop('checked', false);
 		$('div.leaflet-control-layers-overlays label').css('background-color', 'white');
@@ -593,15 +593,10 @@ function resetMarkers(map) {
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
 
-	map.eachLayer(function (layer) {
-		if (!layer.hasOwnProperty('_url')) {
-			if (layer instanceof L.CircleMarker || layer instanceof L.LayerGroup) {
-				console.log(layer);
-				map.removeLayer(layer);
-			}
-		}
-	});
+	selectedLayerNames.forEach(function(layerName) {
+		map.removeLayer(layers[layerName]);
 
+	});
 	$("#objectFilter").trigger('input');
 
 }
@@ -611,7 +606,7 @@ function addLayerInfoControl(map, layers, selectedLayerNames, colorList=null) {
 	}
 	$('#layerinfo').remove();
 
-L.Control.textbox = L.Control.extend({
+	L.Control.textbox = L.Control.extend({
 		onAdd: function() {
 			
 		var text = L.DomUtil.create('div');
@@ -639,7 +634,7 @@ L.Control.textbox = L.Control.extend({
 	L.control.textbox({ position: 'topright'}).addTo(map);
 
 	$('#clear_markers').on('click', function() {
-		resetMarkers(map);
+		resetMarkers(map, layers, selectedLayerNames);
 	});
 
 }
