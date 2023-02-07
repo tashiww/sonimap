@@ -93,7 +93,7 @@ function loadMap(stage_name) {
 				 zIndexOffset: 5555,
 				 metric: true,
 				 shapeOptions: {
-					 color: 'rgb(180, 200, 250)',
+					 color: 'rgb(130, 170, 220)',
 					 weight: 5,
 					 opacity: 1,
 				 }
@@ -177,7 +177,7 @@ L.Control.textbox = L.Control.extend({
 			
 		var text = L.DomUtil.create('div');
 		text.id = "title";
-		text.innerHTML = "<h1>SoniMap v0.3.5</h1>";
+		text.innerHTML = "<h1>SoniMap v0.3.6</h1>";
 		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
@@ -239,14 +239,23 @@ function getLinearDistance(pointA, pointB) {
                 if (latlngs.length < 2) {
                     return "Distance: N/A";
                 } else {
+					let distances = [];
                     for (var i = 0; i < latlngs.length-1; i++) {
 						const currentLatlng = sf_remap([latlngs[i].lng, latlngs[i].lat], stage_name, true);
 						const nextLatlng = sf_remap([latlngs[i+1].lng, latlngs[i+1].lat], stage_name, true);
-
-                        distance += getLinearDistance(currentLatlng, nextLatlng);
+						const currentDistance = getLinearDistance(currentLatlng, nextLatlng);
+						distances.push(currentDistance);
+						distance += currentDistance;
                     }
-                    return "Distance: "+_round(distance, 2)+" units";
+					if (distances.length == 1) {
+                    return "<ul class='distance'><li>Distance: "+ distance +" units</li></ul>";
+					}
+					else {
+                    return "<ul class='distance'><li>Total Distance: "+ distance +" units</li>"+ 
+						distances.map(function(item, index) { return "<li>Segment " + (parseInt(index)+1) + ": " + item + " units</li>"; }).join('') + '</ul>';
+					}
                 }
+
             }
             return null;
         };
