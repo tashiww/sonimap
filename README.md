@@ -8,3 +8,4 @@ sonic frontiers map
 * icons
 * json data parsed from .gedit files
 * jquery
+* leaflet-draw
