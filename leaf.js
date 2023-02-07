@@ -12,6 +12,8 @@ function sf_remap(coords, stage_name, mouse = false) {
    * in-game island size varies.
    * this function remaps in-game coordinates to
    * pixels
+   * coords is [x, y] array
+   * returns latlng object
    * * * * * * * * * * * * * * * * * * * * * * * */
   const origins = {
     w1r03: {
@@ -78,16 +80,47 @@ function loadMap(stage_name) {
     attributionControl: false,
     zoomSnap: 0.25,
     minZoom: -3,
-    maxZoom: 2
+    maxZoom: 2,
   }).setView([1975, 2203], -1.5);
 
+	 var drawnItems = new L.FeatureGroup();
+     map.addLayer(drawnItems);
+     var drawControl = new L.Control.Draw({
+		 position: 'topleft',
+		 draw: {
+			 polyline: {
+				 showLength: false,
+				 zIndexOffset: 5555,
+				 metric: true,
+				 shapeOptions: {
+					 color: 'rgb(180, 200, 250)',
+					 weight: 5,
+					 opacity: 1,
+				 }
+
+				
+			 },
+			 polygon: false,
+			 rectangle: false,
+			 circle: false,
+			 circlemarker: false,
+		 },
+         edit: {
+             featureGroup: drawnItems
+         }
+     });
+	map.on(L.Draw.Event.CREATED, function (event) {
+
+
+  var layer = event.layer;
+  drawnItems.addLayer(layer);
+});
+	map.addLayer(drawnItems);
   const bounds = [
     [0, 0],
     [4096, 4096]
   ];
 
-  var img = L.imageOverlay('./base_img/' + stage_name + '.webp', bounds);
-  img.addTo(map);
 
   let MapSwitcher = L.Control.extend({
     _container: null,
@@ -150,7 +183,6 @@ L.Control.textbox = L.Control.extend({
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
 		text.innerHTML += "<h2>Limitations</h2>";
 		text.innerHTML += "<p>All map data is extracted from .gedit files, which I don't fully understand, so some data may be presented incorrectly. " +
-				"Certain objects, like experience crates and attack/defense crates, aren't properly differentiated because of this. " +
 				"Object coordinates should be accurate, but map placement may vary slightly due to not understanding map bounds and scaling.</p>";
 		text.innerHTML += "<h2>Comments?</h2>";
 		text.innerHTML += "<p>Message tashi on the Sonic Frontiers Speedrunning discord with any comments or questions.</p>";
@@ -163,8 +195,85 @@ L.Control.textbox = L.Control.extend({
 	L.control.textbox = function(opts) { return new L.Control.textbox(opts);};
 	L.control.textbox({ position: 'topleft'}).addTo(map);
 
+     map.addControl(drawControl);
+  var img = L.imageOverlay('./base_img/' + stage_name + '.webp', bounds);
+  img.addTo(map);
 
   get_marker_data(map, stage_name);
+
+
+        // Truncate value based on number of decimals
+        var _round = function(num, len) {
+            return Math.round(num*(Math.pow(10, len)))/(Math.pow(10, len));
+        };
+        // Helper method to format LatLng object (x.xxxxxx, y.yyyyyy)
+        var strLatLng = function(latlng) {
+            return "("+_round(latlng.lat, 6)+", "+_round(latlng.lng, 6)+")";
+        };
+
+function getLinearDistance(pointA, pointB) {
+	const distance = Math.sqrt( ((pointB[0] - pointA[0]) ** 2) + ((pointB[1] - pointA[1]) ** 2));
+	return Math.round(distance, 0);
+}
+
+        var getPopupContent = function(layer) {
+            // Marker - add lat/long
+            if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+				const currentLatlng = layer.getLatLng();
+				return 'X,Z: ' + sf_remap([currentLatlng.lng, currentLatlng.lat], stage_name, true).toString();
+
+            // Circle - lat/long, radius
+            } else if (layer instanceof L.Circle) {
+                var center = layer.getLatLng(),
+                    radius = layer.getRadius();
+                return "Center: "+strLatLng(center)+"<br />" +"Radius: "+_round(radius, 2)+" m";
+            // Rectangle/Polygon - area
+            } else if (layer instanceof L.Polygon) {
+                let latlngs = layer._defaultShape ? layer._defaultShape() : layer.getLatLngs(),
+                    area = L.GeometryUtil.geodesicArea(latlngs);
+                return "Area: "+L.GeometryUtil.readableArea(area, true);
+            // Polyline - distance
+            } else if (layer instanceof L.Polyline) {
+                let latlngs = layer._defaultShape ? layer._defaultShape() : layer.getLatLngs(),
+                    distance = 0;
+                if (latlngs.length < 2) {
+                    return "Distance: N/A";
+                } else {
+                    for (var i = 0; i < latlngs.length-1; i++) {
+						const currentLatlng = sf_remap([latlngs[i].lng, latlngs[i].lat], stage_name, true);
+						const nextLatlng = sf_remap([latlngs[i+1].lng, latlngs[i+1].lat], stage_name, true);
+
+                        distance += getLinearDistance(currentLatlng, nextLatlng);
+                    }
+                    return "Distance: "+_round(distance, 2)+" units";
+                }
+            }
+            return null;
+        };
+
+        // Object created - bind popup to layer, add to feature group
+        map.on(L.Draw.Event.CREATED, function(event) {
+            var layer = event.layer;
+            var content = getPopupContent(layer);
+            if (content !== null) {
+                layer.bindPopup(content);
+            }
+            drawnItems.addLayer(layer);
+        });
+
+        // Object(s) edited - update popups
+        map.on(L.Draw.Event.EDITED, function(event) {
+            var layers = event.layers,
+                content = null;
+            layers.eachLayer(function(layer) {
+                content = getPopupContent(layer);
+                if (content !== null) {
+                    layer.setPopupContent(content);
+                }
+            });
+        });
+
+
 }
 
 
@@ -368,7 +477,6 @@ return (
         addControl(map, layerList);
 		const searchParams = new URLSearchParams(window.location.search);
 		selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
-		  console.log(selectedMarkers);
 		  selectedMarkers.forEach((marker) => {
 			  if(layerList.hasOwnProperty(marker)) {
 				  layerList[marker].addTo(map);
@@ -504,4 +612,5 @@ const searchParams = new URLSearchParams(window.location.search);
 const stage_name = MapNames[searchParams.get('map')] ?? 'w1r03';
 
 loadMap(stage_name);
+
 
