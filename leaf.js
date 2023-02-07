@@ -74,7 +74,7 @@ function loadMap(stage_name) {
     container.off();
     container.remove();
   }
-  var map = L.map('map', {
+  map = L.map('map', {
     crs: L.CRS.Simple,
     preferCanvas: true,
     attributionControl: false,
@@ -177,7 +177,7 @@ L.Control.textbox = L.Control.extend({
 			
 		var text = L.DomUtil.create('div');
 		text.id = "title";
-		text.innerHTML = "<h1>SoniMap v0.3.6</h1>";
+		text.innerHTML = "<h1>SoniMap v0.3.7</h1>";
 		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
@@ -484,6 +484,10 @@ return (
     }).then(() => {
       Promise.all(fetches).then(function() {
         addControl(map, layerList);
+
+		const maxHeight = $(window).height();
+		  $('section.leaflet-control-layers-list').css('height', maxHeight-100);
+
 		const searchParams = new URLSearchParams(window.location.search);
 		selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
 		  selectedMarkers.forEach((marker) => {
@@ -498,6 +502,19 @@ return (
 					$(this).css('background-color', bgColor + '88');
 				});
 		  addLayerInfoControl(map, layerList, selectedMarkers, colorList);
+		  $('div.leaflet-control-layers.leaflet-control').prepend('<input id="objectFilter" type="search"></input>');
+		  $('div.leaflet-control-layers.leaflet-control').prepend('<h2>Object Filters</h2>');
+		  $("#objectFilter").on('input', function(e) {
+			  let searchValue = e.target.value.toLowerCase();
+			 $('.leaflet-control-layers-overlays>label').each(function() {
+				 if ( $(this).text().toLowerCase().indexOf(searchValue)>= 0) {
+					 $(this).show();
+				 }
+				 else {
+					 $(this).hide();
+				 }
+			 });
+		  });
 
 
 	map.on({
@@ -525,10 +542,15 @@ return (
 			if (marker != layerName) {
 				searchParams.append('markers', marker);
 			}
-		let selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
+		let selectedMarkers = searchParams.getAll('markers');
 		  addLayerInfoControl(map, layerList, selectedMarkers, colorList);
 
 		});
+
+		if (markerArray.length == 1) {
+
+	$('#layerinfo').remove();
+		}
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
 	},
@@ -563,6 +585,7 @@ function setMap(name) {
 
 function resetMarkers(map) {
 		$('div.leaflet-control-layers-overlays input:checkbox').removeAttr('checked');
+		$('div.leaflet-control-layers-overlays input').prop('checked', false);
 		$('div.leaflet-control-layers-overlays label').css('background-color', 'white');
 	$('#layerinfo').remove();
 		const searchParams = new URLSearchParams(window.location.search);
@@ -572,10 +595,14 @@ function resetMarkers(map) {
 
 	map.eachLayer(function (layer) {
 		if (!layer.hasOwnProperty('_url')) {
-			map.removeLayer(layer);
+			if (layer instanceof L.CircleMarker || layer instanceof L.LayerGroup) {
+				console.log(layer);
+				map.removeLayer(layer);
+			}
 		}
 	});
 
+	$("#objectFilter").trigger('input');
 
 }
 function addLayerInfoControl(map, layers, selectedLayerNames, colorList=null) {
