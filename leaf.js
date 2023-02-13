@@ -471,6 +471,7 @@ async function get_marker_data(map, stage_name) {
 function getPopup(item, filename) {
 		var model = item.Model ? '<p><span class="emphasize">model: </span>' + item.Model + '</p>' : '';
 		var contents = item.Contents ? '<p><span class="emphasize">contents: </span>' + item.Contents + '</p>' : '';
+		var dimensions = item.Dimensions ? '<p><span class="emphasize">dimensions: </span>' + item.Dimensions.join(', ') + '</p>' : '';
 		var quantity = '';
 		if (item.TypeName.includes('rings')) {
 			quantity = '<p><span class="emphasize">quantity: </span>' + 
@@ -491,6 +492,7 @@ return (
 				model + 
 				contents +
 				quantity +
+				dimensions + 
                 '<p><span class="emphasize">params:</span><br>' + item.ParameterData + '</p>' + 
 				extraParams 
 );
