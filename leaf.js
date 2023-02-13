@@ -441,7 +441,7 @@ async function get_marker_data(map, stage_name) {
 		const halfWidth = dimensions[0] * 0.5;
 		const halfHeight = dimensions[2] * 0.5;
 
-		const leftOrigin = angle > 0 ? [x - (halfWidth * Math.cos(angle)), z - (halfWidth * Math.sin(angle))] : [x, z];
+		const leftOrigin = [x - (halfWidth * Math.cos(angle)), z - (halfWidth * Math.sin(angle))];
 		const rightOrigin = [x + (halfWidth * Math.cos(angle)), z + (halfWidth * Math.sin(angle))];
 
 		const heightX = halfHeight *  Math.sin(angle);
@@ -458,19 +458,13 @@ async function get_marker_data(map, stage_name) {
 		if (!item.Dimensions) {
 			return;
 		}
-		console.log(item);
-		const bottomLeftVertex = [item.Position[0] - (item.Dimensions[0] * 0.5 * Math.cos(item.Rotation[1]) - ( item.Dimensions[2] / Math.sqrt(2))), 
-			-item.Position[2] - (Math.sin(item.Rotation[1]) * item.Dimensions[0] * 0.5) - (item.Dimensions[2] * 0.5 / Math.sqrt(2))];
-		const topLeftVertex = [item.Position[0] - (item.Dimensions[0] * 0.5 * Math.cos(item.Rotation[1]) + ( item.Dimensions[2] / Math.sqrt(2))), 
-			-item.Position[2] + (Math.sin(item.Rotation[1]) * item.Dimensions[0] * 0.5) + (item.Dimensions[2] * 0.5 / Math.sqrt(2))];
-		const topRightVertex = [item.Position[0] + (item.Dimensions[0] * 0.5 * Math.cos(item.Rotation[1]) + ( item.Dimensions[2] / Math.sqrt(2))), 
-			-item.Position[2] + (Math.sin(item.Rotation[1]) * item.Dimensions[0] * 0.5) + (item.Dimensions[2] * 0.5 / Math.sqrt(2))];
-		const bottomRightVertex = [item.Position[0] + (item.Dimensions[0] * 0.5 * Math.cos(item.Rotation[1]) + ( item.Dimensions[2] / Math.sqrt(2))), 
-			-item.Position[2] - (Math.sin(item.Rotation[1]) * item.Dimensions[0] * 0.5) + (item.Dimensions[2] * 0.5 / Math.sqrt(2))];
-
-		const bounds = sf_multi_remap(rotatePolygon(item.Position, item.Dimensions, item.Rotation[1]), stage_name);
-		console.log(bounds);
-		const rect = new L.polygon(bounds, {color: color, weight: 1});
+		const originalCoords = rotatePolygon(item.Position, item.Dimensions, item.Rotation[1]);
+		const bounds = sf_multi_remap(originalCoords, stage_name);
+		const formattedCoords = originalCoords.map((value) => {
+			return [Math.round(value[0]), Math.round(-value[1])];
+		});
+		const tooltip = "Corners: <ul class='rectangle_tooltip'><li> " + formattedCoords.join("</li><li>") + "</li></ul>";
+		const rect = new L.polygon(bounds, {color: color, weight: 1}).bindPopup(tooltip);
 		return rect;
 }
 
