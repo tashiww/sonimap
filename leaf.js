@@ -427,6 +427,53 @@ async function get_marker_data(map, stage_name) {
 		}
  	
 	}
+	function sf_multi_remap(points, stage_name) {
+		let remappedPoints = [];
+		points.forEach((point) => {
+			remappedPoint = sf_remap([point[0], point[1]], stage_name);
+			remappedPoints.push(remappedPoint);
+		});
+			return remappedPoints;
+	}
+	function rotatePolygon(position, dimensions, angle) {
+		const x = position[0];
+		const z = -position[2];
+		const halfWidth = dimensions[0] * 0.5;
+		const halfHeight = dimensions[2] * 0.5;
+
+		const leftOrigin = angle > 0 ? [x - (halfWidth * Math.cos(angle)), z - (halfWidth * Math.sin(angle))] : [x, z];
+		const rightOrigin = [x + (halfWidth * Math.cos(angle)), z + (halfWidth * Math.sin(angle))];
+
+		const heightX = halfHeight *  Math.sin(angle);
+		const heightZ = halfHeight *  Math.cos(angle);
+
+		const bottomLeftVertex = [leftOrigin[0] - heightX, leftOrigin[1] -heightZ] ;
+		const topLeftVertex = [leftOrigin[0] - heightX, leftOrigin[1] +heightZ] ;
+		const bottomRightVertex = [rightOrigin[0] +heightX, rightOrigin[1] -heightZ] ;
+		const topRightVertex = [rightOrigin[0] +heightX,  rightOrigin[1] +heightZ] ;
+
+		return [bottomLeftVertex, topLeftVertex, topRightVertex, bottomRightVertex];
+	}
+	function getRectangle(item, color) {
+		if (!item.Dimensions) {
+			return;
+		}
+		console.log(item);
+		const bottomLeftVertex = [item.Position[0] - (item.Dimensions[0] * 0.5 * Math.cos(item.Rotation[1]) - ( item.Dimensions[2] / Math.sqrt(2))), 
+			-item.Position[2] - (Math.sin(item.Rotation[1]) * item.Dimensions[0] * 0.5) - (item.Dimensions[2] * 0.5 / Math.sqrt(2))];
+		const topLeftVertex = [item.Position[0] - (item.Dimensions[0] * 0.5 * Math.cos(item.Rotation[1]) + ( item.Dimensions[2] / Math.sqrt(2))), 
+			-item.Position[2] + (Math.sin(item.Rotation[1]) * item.Dimensions[0] * 0.5) + (item.Dimensions[2] * 0.5 / Math.sqrt(2))];
+		const topRightVertex = [item.Position[0] + (item.Dimensions[0] * 0.5 * Math.cos(item.Rotation[1]) + ( item.Dimensions[2] / Math.sqrt(2))), 
+			-item.Position[2] + (Math.sin(item.Rotation[1]) * item.Dimensions[0] * 0.5) + (item.Dimensions[2] * 0.5 / Math.sqrt(2))];
+		const bottomRightVertex = [item.Position[0] + (item.Dimensions[0] * 0.5 * Math.cos(item.Rotation[1]) + ( item.Dimensions[2] / Math.sqrt(2))), 
+			-item.Position[2] - (Math.sin(item.Rotation[1]) * item.Dimensions[0] * 0.5) + (item.Dimensions[2] * 0.5 / Math.sqrt(2))];
+
+		const bounds = sf_multi_remap(rotatePolygon(item.Position, item.Dimensions, item.Rotation[1]), stage_name);
+		console.log(bounds);
+		const rect = new L.polygon(bounds, {color: color, weight: 1});
+		return rect;
+}
+
 function getPopup(item, filename) {
 		var model = item.Model ? '<p><span class="emphasize">model: </span>' + item.Model + '</p>' : '';
 		var contents = item.Contents ? '<p><span class="emphasize">contents: </span>' + item.Contents + '</p>' : '';
@@ -477,6 +524,11 @@ return (
 				const marker = getMarker(item, file, colorList[item.TypeName]);
 				const popup = getPopup(item, file.replace('.json', ''));
 
+				const box = getRectangle(item, colorList[item.TypeName]);
+				if (box) {
+					box.addTo(layerList[item.TypeName]);
+				}
+
              marker.bindPopup(popup).addTo(layerList[item.TypeName]);
             });
           }));
@@ -502,7 +554,7 @@ return (
 					$(this).css('background-color', bgColor + '88');
 				});
 		  addLayerInfoControl(map, layerList, selectedMarkers, colorList);
-		  $('div.leaflet-control-layers.leaflet-control').prepend('<input id="objectFilter" type="search"></input>');
+		  $('div.leaflet-control-layers.leaflet-control').prepend('<input autocomplete="off" id="objectFilter" type="search"></input>');
 		  $('div.leaflet-control-layers.leaflet-control').prepend('<h2>Object Filters</h2>');
 		  $("#objectFilter").on('input', function(e) {
 			  let searchValue = e.target.value.toLowerCase();
