@@ -447,10 +447,10 @@ async function get_marker_data(map, stage_name) {
 		const heightX = halfHeight *  Math.sin(angle);
 		const heightZ = halfHeight *  Math.cos(angle);
 
-		const bottomLeftVertex = [leftOrigin[0] - heightX, leftOrigin[1] -heightZ] ;
+		const bottomLeftVertex = [leftOrigin[0] + heightX, leftOrigin[1] -heightZ] ;
 		const topLeftVertex = [leftOrigin[0] - heightX, leftOrigin[1] +heightZ] ;
 		const bottomRightVertex = [rightOrigin[0] +heightX, rightOrigin[1] -heightZ] ;
-		const topRightVertex = [rightOrigin[0] +heightX,  rightOrigin[1] +heightZ] ;
+		const topRightVertex = [rightOrigin[0] -heightX,  rightOrigin[1] +heightZ] ;
 
 		return [bottomLeftVertex, topLeftVertex, topRightVertex, bottomRightVertex];
 	}
