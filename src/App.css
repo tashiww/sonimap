@@ -1,38 +1,160 @@
-.App {
-  text-align: center;
+.map {
+  height: 100vh;
+  width: 100vw;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+
+@font-face {
+	font-family: 'axis';
+	src: url('AxisCondProN-B.otf');
+}
+* { font-family: 'axis', sans-serif; }
+body { margin: 0; }
+#map {
+	height: 100vh;
+}
+.markers_invert {
+	filter: invert(1);
+}
+.menu ul {
+	list-style-type: none;
+	padding: 0px;
+}
+.menu li {
+	background-color: rgba(255, 255, 255, 0.8);
+	border-radius: 5px;
+	padding: 5px;
+	text-align: center;
+	user-select: none;
+	cursor: pointer;
+	margin: 5px 0;
+	box-shadow: rgba(0, 0, 0, .2) 2px 2px 4px;
+}
+.menu li:hover {
+	background-color: rgba(220, 220, 220, 0.8);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.mouseposition {
+	background-color: rgba(255, 255, 255, .8);
+	padding: 2px 5px;
+	border-radius: 5px;
+	box-shadow: rgba(0, 0, 0, .2) 2px 2px 4px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.leaflet-popup h1 {
+margin: 4px 0;
+text-align: center;
+}
+.leaflet-popup p {
+	font-family: monospace;
+	font-size: 1.2em;
+	margin: 6px 0;
+}
+.leaflet-popup .emphasize {
+	font-weight: bold;
 }
 
-.App-link {
-  color: #61dafb;
+#title {
+	border: 2px solid rgba(0, 0, 0, .2);
+	text-align: center;
+	margin-left: 60px;
+  margin-top: -74px;
+	padding: 5px;
+	border-radius: 10px;
+	background-color: rgba(255, 255, 255, .8);
+	position: absolute;
+	width: 220px;
+}
+#title:hover {
+	width: 440px;
+}
+#title h1 {
+	padding: 0px 10px;
+	margin: 0;
+}
+#title>h2, #title>p {
+	display: none;
+	text-align: left;
+	padding: 0px 20px;
+	margin: 0;
+}
+#title>h2 {
+	margin: 4px 0 0 0;
+}
+#title:hover>h2, #title:hover>p {
+	display: block;
+}
+#title p:last-child {
+	padding-bottom: 10px;
+}
+#title p {
+	font-family: sans-serif;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.menu .selected {
+	background-color: rgba(180, 200, 250, .7);
 }
+
+.leaflet-control-layers h2 {
+	font-size: 2em;
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+.leaflet-control-layers label {
+	border-radius: 6px;
+}
+
+div#layerinfo {
+	position: absolute;
+	right: 250px;
+	background-color: rgba(255, 255, 255, .8);
+	border-radius: 10px;
+	border: 2px solid rgba(0,0,0, .2);
+	width: 180px;
+}
+
+#layerinfo ul {
+	list-style-type: none;
+	margin: 0px;
+	padding: 5px;
+}
+#layerinfo li {
+	border-radius: 6px;
+	padding: 2px 4px;
+	color: #333;
+}
+#layerinfo #clear_markers {
+	text-align: center;
+	padding: 2px;
+	background-color: #b4c8fab3;
+	cursor: pointer;
+	border-radius: 8px;
+	margin: 0px 10% 4px 10%;
+}
+
+.leaflet-draw-actions a {
+	color: white;
+}
+
+.distance {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+.distance li:first-child {
+	padding: 0;
+}
+.distance li {
+	padding-left: 20px;
+}
+#objectFilter {
+	width: 100%;
+	margin-bottom: 2px;
+	display:block;
+}
+
+.leaflet-control-layers.leaflet-control {
+	width: 220px;
+}
+ul.rectangle_tooltip { list-style-type: none; margin: 0; padding: 0; }
