@@ -19,34 +19,30 @@ import MapMenu from "./components/MapMenu";
 import MousePosition from "./components/MousePosition";
 import xy, { sf_remap } from "./util/MapCoordinates";
 
-import islands from "./islands";
+import islands, { Island } from "./islands";
 import { useLocation, useSearchParams } from "react-router-dom";
-
 
 function App() {
   const location = useLocation();
   const [island, setIsland] = React.useState(islands[0]);
+  const [params, setParams] = useSearchParams();
 
   React.useEffect(() => {
-
-    const queryParams = new URLSearchParams(location.search);
-    const queryIsland = queryParams.get('map');
+    const queryIsland = params.get("map");
     if (queryIsland) {
-    setIsland(islands.find((island) => { return island.name === queryIsland } ) ?? islands[0]);
-    } else { setParams('map=Kronos'); }
-
+      const islandMatch = islands.find((island) => {
+        return island.name === queryIsland;
+      });
+      if (islandMatch) {
+        setIsland(islandMatch);
+      }
+    }
+  }, []);
+  
+  React.useEffect(() => {
+    setParams("map=" + island.name);
   }, [island]);
-  const [params, setParams] = useSearchParams();
-  console.log(params);
 
-  function changeMap(e: React.MouseEvent<HTMLLIElement>) {
-    const islandName = (e.target as HTMLLIElement).textContent;
-    const selectedIsland = islands.find((island) => { return island.name === islandName; });
-    if(selectedIsland) {
-    setIsland(selectedIsland);
-    setParams('map=' + selectedIsland.name);
-  }
-}
   return (
     <div id="map">
       <MapContainer
@@ -60,7 +56,10 @@ function App() {
         zoom={-2}
         crs={sf_remap}
       >
-        <ImageOverlay url={'./base_img/' + island.filename + '.webp'} bounds={island.bounds} />
+        <ImageOverlay
+          url={"./base_img/" + island.filename + ".webp"}
+          bounds={island.bounds}
+        />
         <LayersControl collapsed={false} position="topright">
           <LayersControl.Overlay name="what">
             <Marker position={[0, 0]}>
@@ -72,7 +71,7 @@ function App() {
         </LayersControl>
 
         <MousePosition />
-        <MapMenu selectedIsland={island.name} clickHandler={changeMap} />
+        <MapMenu selectedIsland={island.name} clickHandler={setIsland} />
         <MapTitle />
       </MapContainer>
     </div>
