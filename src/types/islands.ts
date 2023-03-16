@@ -1,5 +1,5 @@
 import { LatLngBounds, latLngBounds } from "leaflet";
-import xy from "./util/MapCoordinates";
+import xy from "../util/MapCoordinates";
 
 export interface Island {
 	name: string;

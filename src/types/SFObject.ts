@@ -1,0 +1,23 @@
+
+export interface SFObject {
+	ObjectID: string,
+	ParentID?: string,
+	TypeName: string,
+	ObjectName: string,
+	Position: number[],
+	Rotation: number[],
+	ChildPositionOffset?: number[],
+	ChildRotationOffset?: number[],
+	ParameterData?: string,
+	ParameterValues?: string,
+	TagData?: string,
+	ContentID?: string,
+	Quantity?: number,
+	Quantity2?: number,
+	Model?: number[],
+	Contents?: string,
+	Dimensions?: number[],
+	ShapeID?: string,
+	DimensionRotation?: number[],
+	MainStory?: boolean,
+}

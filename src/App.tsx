@@ -1,5 +1,4 @@
 import "./App.css";
-import Kronos from "./base_img/w1r03.webp";
 
 import {
   LayersControl,
@@ -11,16 +10,15 @@ import {
 } from "react-leaflet";
 import { ImageOverlay } from "react-leaflet";
 
-import L, { LatLng, latLngBounds, latLng, LatLngBounds } from "leaflet";
 import React from "react";
-import Control from "react-leaflet-custom-control";
 import MapTitle from "./components/MapTitle";
 import MapMenu from "./components/MapMenu";
 import MousePosition from "./components/MousePosition";
 import xy, { sf_remap } from "./util/MapCoordinates";
 
-import islands, { Island } from "./islands";
+import islands from "./types/islands";
 import { useLocation, useSearchParams } from "react-router-dom";
+import MarkerList from "./components/MarkerList";
 
 function App() {
   const location = useLocation();
@@ -43,6 +41,12 @@ function App() {
     setParams("map=" + island.name);
   }, [island]);
 
+// import 21525.599999904633 - 607
+// or 800 - 85 ? first load 782, subsequent 817?
+// fetch is 221 - 98 ????
+// or 200 - 87,  222 - 200
+
+
   return (
     <div id="map">
       <MapContainer
@@ -60,18 +64,10 @@ function App() {
           url={"./base_img/" + island.filename + ".webp"}
           bounds={island.bounds}
         />
-        <LayersControl collapsed={false} position="topright">
-          <LayersControl.Overlay name="what">
-            <Marker position={[0, 0]}>
-              <Popup>
-                A pretty CSS3 popup. <br /> Easily customizable.
-              </Popup>
-            </Marker>
-          </LayersControl.Overlay>
-        </LayersControl>
-
+        <MarkerList selectedIsland={island} />
+        
         <MousePosition />
-        <MapMenu selectedIsland={island.name} clickHandler={setIsland} />
+        <MapMenu selectedIslandName={island.name} clickHandler={setIsland} />
         <MapTitle />
       </MapContainer>
     </div>
