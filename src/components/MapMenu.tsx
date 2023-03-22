@@ -1,7 +1,7 @@
 import Control from "react-leaflet-custom-control";
 import islands, { Island } from "../types/islands";
 export default 
-function MapMenu(props: {clickHandler: React.Dispatch<React.SetStateAction<Island>>, selectedIslandName: string}) {
+function MapMenu(props: {clickHandler: any, selectedIslandName: string}) {
   return (
 	<Control prepend={true} position="bottomleft">
 	  <div className="menu">

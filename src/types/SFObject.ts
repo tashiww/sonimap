@@ -20,4 +20,5 @@ export interface SFObject {
 	ShapeID?: string,
 	DimensionRotation?: number[],
 	MainStory?: boolean,
+	FileName: string,
 }
