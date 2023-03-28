@@ -93,7 +93,7 @@ function loadMap(stage_name) {
 				 zIndexOffset: 5555,
 				 metric: true,
 				 shapeOptions: {
-					 color: 'rgb(130, 170, 220)',
+					 color: 'rgb(10, 110, 220)',
 					 weight: 5,
 					 opacity: 1,
 				 }
@@ -102,7 +102,18 @@ function loadMap(stage_name) {
 			 },
 			 polygon: false,
 			 rectangle: false,
-			 circle: false,
+			 circle: {
+				 showLength: false,
+				 zIndexOffset: 5555,
+				 metric: true,
+				 shapeOptions: {
+					 color: 'rgb(210, 110, 20)',
+					 fill: false,
+					 weight: 3,
+					 opacity: 1,
+				 }
+			 },
+
 			 circlemarker: false,
 		 },
          edit: {
@@ -121,7 +132,31 @@ function loadMap(stage_name) {
     [4096, 4096]
   ];
 
+/*
+$(document).ready(function() {
+$('input[type=color]').on("input", function() {
+	var poly_color = $(this).val();
+});
+})
 
+let colorPicker = L.Control.extend({
+
+    _container: null,
+    options: {
+      position: 'topleft'
+    },
+
+    onAdd: function() {
+      var menu = L.DomUtil.create('div', 'colors');
+      menu.innerHTML = '<input type="color" value="#0a80b0" >';
+		return menu;
+	},});
+
+
+this.colorPicker = new colorPicker();
+this.colorPicker.addTo(map);
+
+*/
   let MapSwitcher = L.Control.extend({
     _container: null,
     options: {
@@ -177,7 +212,7 @@ L.Control.textbox = L.Control.extend({
 			
 		var text = L.DomUtil.create('div');
 		text.id = "title";
-		text.innerHTML = "<h1>SoniMap v0.3.8</h1>";
+		text.innerHTML = "<h1>SoniMap v0.4.1</h1>";
 		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
@@ -349,10 +384,17 @@ async function get_marker_data(map, stage_name) {
     Amy: {
       iconUrl: './icons/character2_00.png',
     },
+    Amy_main: {
+      iconUrl: './icons/character2_00_colored.png',
+    },
     Knuckles: {
       iconUrl: './icons/character2_01.png',
     },
+    Knuckles_main: {
+      iconUrl: './icons/character2_01_colored.png',
+    },
     Tails: { iconUrl: './icons/character2_02.png', },
+    Tails_main: { iconUrl: './icons/character2_02_colored.png', },
     SequenceItem: { iconUrl: strayIcon, },
     Gismo_atk: { iconUrl: './icons/character_08.png', },
     Gismo_def: { iconUrl: './icons/character_07.png', },
@@ -374,7 +416,10 @@ async function get_marker_data(map, stage_name) {
 
 	const coords = sf_remap([item.Position[0], -item.Position[2]], stage_name);
 		let valid_image = true;
-	              var iconUrl = iconList[item.TypeName]?.iconUrl;
+		  var iconUrl = item.MainStory ? iconList[item.TypeName + '_main']?.iconUrl : iconList[item.TypeName]?.iconUrl;
+		if ( item.MainStory ) {
+		console.log(iconUrl);
+		}
 		if (!iconUrl) {
 			// circle marker path
 			var radius = 8;
@@ -412,7 +457,7 @@ async function get_marker_data(map, stage_name) {
 			console.log('no img');
 		}
 			var size = 30;
-			if (item.TypeName == 'PortalBit' && file.includes('boss')) {
+			if (item.TypeName == 'PortalBit' && item.FileName.includes('boss')) {
 				size = 20;
 			}
 			
@@ -483,29 +528,32 @@ function getPopup(item, filename) {
 		}
 
 	const extraParams = item.Model ? '<p>' + JSON.stringify(item.ParameterValues, null, 2) + '</p>' : '';
+	/*
+                '<p><span class="emphasize">params:</span><br>' + item.ParameterData + '</p>' + 
+				extraParams 
+				*/
 return (
                 '<h1>' + item.ObjectName + '</h1>' +
                 '<p><span class="emphasize">position:</span> ' +
                 Math.round(item.Position[0]) + ", " + Math.round(item.Position[1]) + ", " +
                 Math.round(item.Position[2]) + '</p>' +
-                '<p><span class="emphasize">file:</span> ' + filename.split('/')[1] + "</p>" +
+                '<p><span class="emphasize">file:</span> ' + filename + "</p>" +
 				model + 
 				contents +
 				quantity +
-				dimensions + 
-                '<p><span class="emphasize">params:</span><br>' + item.ParameterData + '</p>' + 
-				extraParams 
+				dimensions 
 );
+
 }
   const layerList = {};
   const colorList = {};
   var fetches = [];
 	var exp_boxes = [];
-  fetch('./json_data/file_list.txt').then((response) => response.text())
+  fetch('./json_data/' + stage_name + '/index.json').then((response) => response.json())
     .then((json_files) => {
-      json_files.split("\n").filter(Boolean).filter(x => x.includes(stage_name)).forEach(file => {
+      json_files.forEach(file => {
         fetches.push(
-          fetch('./json_data/' + file)
+          fetch('./json_data/'+ stage_name + '/' + file + '.json')
           .then((response) => response.json())
           .then((json) => {
             json.forEach((item) => {
@@ -518,7 +566,7 @@ return (
 				  colorList[item.TypeName] = '#' + randomColor;
 			  }
 				const marker = getMarker(item, file, colorList[item.TypeName]);
-				const popup = getPopup(item, file.replace('.json', ''));
+				const popup = getPopup(item, item.FileName);
 
 				const box = getRectangle(item, colorList[item.TypeName]);
 				if (box) {
@@ -602,9 +650,15 @@ return (
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
 	},
+}).catch(() => {
+	return '';
 });
-      });
-    });
+      }).catch(() => {
+		  return '';
+	  });
+    }).catch(() => {
+		return '';
+	});
 
 }
 
