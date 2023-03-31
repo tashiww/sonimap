@@ -61,6 +61,37 @@ L.Map.addInitHook(function() {
   mapsPlaceholder.push(this); // Use whatever global scope variable you like.
 });
 
+const cyberStages = {"w6d01": {"Stage":"1-1", "RingMission": 150, "Time": 43,"ExtremeTime": 40},
+"w6d02": {"Stage":"1-4", "RingMission": 20, "Time": 75,"ExtremeTime": 60},
+"w6d03": {"Stage":"2-6", "RingMission": 100, "Time": 145,"ExtremeTime": 92},
+"w6d04": {"Stage":"3-1", "RingMission": 20, "Time": 120,"ExtremeTime": 87},
+"w6d05": {"Stage":"2-1", "RingMission": 30, "Time": 100,"ExtremeTime": 62},
+"w6d06": {"Stage":"1-6", "RingMission": 50, "Time": 75,"ExtremeTime": 70},
+"w6d07": {"Stage":"3-5", "RingMission": 90, "Time": 65,"ExtremeTime": 56},
+"w6d08": {"Stage":"3-2", "RingMission": 30, "Time": 80,"ExtremeTime": 65},
+"w6d09": {"Stage":"3-4", "RingMission": 30, "Time": 80,"ExtremeTime": 66},
+"w6d10": {"Stage":"4-5", "RingMission": 180, "Time": 90,"ExtremeTime": 62},
+"w7d01": {"Stage":"4-3", "RingMission": 70, "Time": 100,"ExtremeTime": 73},
+"w7d02": {"Stage":"2-3", "RingMission": 90, "Time": 55,"ExtremeTime": 43},
+"w7d03": {"Stage":"3-7", "RingMission": 80, "Time": 100,"ExtremeTime": 70},
+"w7d04": {"Stage":"1-5", "RingMission": 40, "Time": 75,"ExtremeTime": 50},
+"w7d05": {"Stage":"4-8", "RingMission": 15, "Time": 30,"ExtremeTime": 23},
+"w7d06": {"Stage":"2-4", "RingMission": 75, "Time": 70,"ExtremeTime": 42},
+"w7d07": {"Stage":"4-6", "RingMission": 40, "Time": 90,"ExtremeTime": 78},
+"w7d08": {"Stage":"4-1", "RingMission": 130, "Time": 105,"ExtremeTime": 89},
+"w8d01": {"Stage":"1-2", "RingMission": 80, "Time": 55,"ExtremeTime": 55},
+"w8d02": {"Stage":"3-3", "RingMission": 25, "Time": 115,"ExtremeTime": 94},
+"w8d03": {"Stage":"2-2", "RingMission": 30, "Time": 55,"ExtremeTime": 34},
+"w8d04": {"Stage":"2-5", "RingMission": 30, "Time": 70,"ExtremeTime": 55},
+"w8d05": {"Stage":"2-7", "RingMission": 30, "Time": 90,"ExtremeTime": 58},
+"w8d06": {"Stage":"3-6", "RingMission": 30, "Time": 175,"ExtremeTime": 128},
+"w9d02": {"Stage":"4-2", "RingMission": 120, "Time": 75,"ExtremeTime": 65},
+"w9d03": {"Stage":"4-4", "RingMission": 150, "Time": 160,"ExtremeTime": 123},
+"w9d04": {"Stage":"1-3", "RingMission": 80, "Time": 60,"ExtremeTime": 37},
+"w9d05": {"Stage":"4-7", "RingMission": 80, "Time": 90,"ExtremeTime": 62},
+"w9d06": {"Stage":"1-7", "RingMission": 50, "Time": 85,"ExtremeTime": 55},
+"w9d07": {"Stage":"4-9", "RingMission": 120, "Time": 75,"ExtremeTime": 59}
+};
 
 function loadMap(stage_name) {
 
@@ -212,12 +243,12 @@ L.Control.textbox = L.Control.extend({
 			
 		var text = L.DomUtil.create('div');
 		text.id = "title";
-		text.innerHTML = "<h1>SoniMap v0.4.1</h1>";
+		text.innerHTML = "<h1>SoniMap v0.5.1</h1>";
 		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
 		text.innerHTML += "<h2>Limitations</h2>";
-		text.innerHTML += "<p>All map data is extracted from .gedit files, which I don't fully understand, so some data may be presented incorrectly. " +
+		text.innerHTML += "<p>All map data has been extracted from .gedits with <a href='https://github.com/Radfordhound/HedgeLib'>HedgeLib</a>. " +
 				"Object coordinates should be accurate, but map placement may vary slightly due to not understanding map bounds and scaling.</p>";
 		text.innerHTML += "<h2>Comments?</h2>";
 		text.innerHTML += "<p>Message tashi on the Sonic Frontiers Speedrunning discord with any comments or questions.</p>";
@@ -389,6 +420,7 @@ async function get_marker_data(map, stage_name) {
     Knuckles_main: {
       iconUrl: './icons/character2_01_colored.png',
     },
+	  ChaosEmeraldStorage: { iconUrl: './icons/character2_05.png', },
     Tails: { iconUrl: './icons/character2_02.png', },
     Tails_main: { iconUrl: './icons/character2_02_colored.png', },
     SequenceItem: { iconUrl: strayIcon, },
@@ -404,9 +436,8 @@ async function get_marker_data(map, stage_name) {
     FishCoin: {
       iconUrl: './icons/character_02.png',
     },
-    Sage: {
-      iconUrl: './icons/character2_03.png',
-    },
+    Sage: { iconUrl: './icons/character2_03.png', },
+    Sage_main: { iconUrl: './icons/character2_03_colored.png', },
   };
 
 
@@ -415,23 +446,29 @@ async function get_marker_data(map, stage_name) {
 		}
 	const coords = sf_remap([item?.position[0], -item?.position[2]], stage_name);
 		let valid_image = true;
-		  var iconUrl = item.MainStory ? iconList[item.type + '_main']?.iconUrl : iconList[item.type]?.iconUrl;
+		  var iconUrl = item.parameters?.purposeOfUse == 'Normal' ? iconList[item.type + '_main']?.iconUrl : iconList[item.type]?.iconUrl;
+			if (item.parameters?.dropItemParam?.dropItem) {
+				switch(item.parameters.dropItemParam.dropItem) {
+					case "SKILL_PIECE":
+						iconUrl = iconList.Gismo_exp.iconUrl;
+						break;
+					case "RING":
+						iconUrl = iconList.Gismo_rings.iconUrl;
+						break;
+					case "GUARD_SEED":
+						iconUrl = iconList.Gismo_def.iconUrl;
+						break;
+					case "POWER_SEED":
+						iconUrl = iconList.Gismo_atk.iconUrl;
+						break;
+
+				}
+
+			}
 		if (!iconUrl) {
 			// circle marker path
 			var radius = 8;
 			let color = colorList[item.type];
-			if (item.type == 'Gismo_exp') {
-				const qty = parseInt(item.Quantity);
-				if (qty >= 15)  {
-					radius = 10;
-				}
-				else if (qty >=8) {
-					radius = 8;
-				}
-				else {
-					radius = 6;
-				}
-			}
 			if (item.type == 'QuestBox') {
 				const qty = item.parameters.heightBoxNum * item.parameters.SideBoxNum * 
 					item.parameters.depthBoxNum * item.parameters.dropItemParam.dropNum;
@@ -575,6 +612,7 @@ function getPopup(item, filename) {
 		var model = item.parameters.name ? '<p><span class="emphasize">model: </span>' + item.parameters.name + '</p>' : '';
 		var contents = item.parameters?.dropItemParam?.dropItem ? '<p><span class="emphasize">contents: </span>' + item.parameters.dropItemParam.dropItem + '</p>' : '';
 		var dimensions = Array.isArray(item.parameters?.size) ? '<p><span class="emphasize">dimensions: </span>' + item.parameters.size.join(', ') + '</p>' : '';
+	var cyberInfo = item.parameters?.stageCode ? '<pre>'+ JSON.stringify(cyberStages[item.parameters.stageCode]) + '</pre>' : '';
 		var quantity = '';
 		if (item?.parameters.dropItemParam?.dropItem == 'RING') {
 			quantity = '<p><span class="emphasize">quantity: </span>' + 
@@ -583,23 +621,18 @@ function getPopup(item, filename) {
 	else if (item.type == 'QuestBox') {
 			quantity = '<p><span class="emphasize">quantity: </span>' + item.parameters.heightBoxNum * item.parameters.SideBoxNum * item.parameters.depthBoxNum * item.parameters.dropItemParam.dropNum;
 	}
-	/*
-	else if (item.type.includes('Gismo_')) {
-			quantity = item.Quantity ? '<p><span class="emphasize">quantity: </span>' + 
-							(	item.Contents == 'exp' ? item.Quantity*200 : item.Quantity) + '</p>' : '';
+	else if (item?.parameters.dropItemParam?.dropItem == 'SKILL_PIECE') {
+			quantity = item.parameters?.dropItemParam?.dropNum ? '<p><span class="emphasize">quantity: </span>' + 
+							item.parameters.dropItemParam.dropNum * 200 + '</p>' : '';
 		}
-		*/
 
-	/*
-                '<p><span class="emphasize">params:</span><br>' + item.ParameterData + '</p>' + 
-				extraParams 
-				*/
 return (
                 '<h1>' + item.name + '</h1>' +
                 '<p><span class="emphasize">position:</span> ' +
                 Math.round(item.position[0]) + ", " + Math.round(item.position[1]) + ", " +
                 Math.round(item.position[2]) + '</p>' +
                 '<p><span class="emphasize">file:</span> ' + filename + "</p>" +
+				cyberInfo + 
 				model + 
 				contents +
 				quantity +
@@ -610,7 +643,6 @@ return (
   const layerList = {};
   const colorList = {};
   var fetches = [];
-	var exp_boxes = [];
 	fetch('./hson/file_list.txt').then((response) => response.text())
     .then((json_files) => {
       json_files.split("\n").filter(Boolean).filter(x => x.includes(stage_name)).forEach(file => {
@@ -624,9 +656,6 @@ return (
 				if(!item.position) {
 					return;
 				}
-				if (item.Contents == 'exp') {
-					exp_boxes.push({qty: item.Quantity, pos: item.position, name: item.name});
-				}
 			  if (!layerList.hasOwnProperty(item.type)) {
 				layerList[item.type] = L.layerGroup();
 				const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
@@ -638,19 +667,10 @@ return (
 
 				const box = getRectangle(item, colorList[item.type]);
 				if (box) {
-					//if (item.type == 'BlockObject' && item.name.substring(item.name.length -2) < 70 || filename.includes('electric')) {
-						//return ;
-					//}
-					box.addTo(layerList[item.type]);
+					box.bindPopup(popup, {maxWidth: 550}).addTo(layerList[item.type]);
 				}
-				if (marker) {
-					//if (item.type == 'BlockObject' && item.name.substring(item.name.length -2) < 70 || filename.includes('electric')) {
-						//return ;
-					//}
-					//if (item.type == 'Spring' && item.name.substring(item.name.length -2) > 21) {
-						//return ;
-					//}
-				 marker.bindPopup(popup, {maxWidth:500}).addTo(layerList[item.type]);
+				else if (marker) {
+				 marker.bindPopup(popup, {maxWidth:550}).addTo(layerList[item.type]);
 				}
             });
           }));
@@ -659,7 +679,6 @@ return (
       Promise.all(fetches).then(function() {
         addControl(map, layerList);
 
-		const maxHeight = $(window).height();
 		  $('section.leaflet-control-layers-list').css('height', 'calc(100vh - 100px)');
 
 		const searchParams = new URLSearchParams(window.location.search);
