@@ -104,7 +104,7 @@ function loadMap(stage_name) {
 			 rectangle: false,
 			 circle: {
 				 showLength: false,
-				 zIndexOffset: 5555,
+				 zIndexOffset: -50,
 				 metric: true,
 				 shapeOptions: {
 					 color: 'rgb(210, 110, 20)',
@@ -176,7 +176,7 @@ this.colorPicker.addTo(map);
 
   });
 
-  let Position = L.Control.extend({
+  let position = L.Control.extend({
     _container: null,
     options: {
       position: 'bottomleft'
@@ -195,7 +195,7 @@ this.colorPicker.addTo(map);
       this._latlng.innerHTML = "X,Z: " + latlng;
     }
   });
-  this.position = new Position();
+  this.position = new position();
   map.addControl(this.position);
 
   this.mapswitcher = new MapSwitcher();
@@ -353,10 +353,6 @@ async function get_marker_data(map, stage_name) {
 
 
   const iconList = {
-    BlockObject: {
-      iconUrl: './icons/character_15.png',
-    },
-
     Portal: {
       iconUrl: './icons/character2_04.png',
     },
@@ -401,7 +397,7 @@ async function get_marker_data(map, stage_name) {
     Gismo_exp: { iconUrl: './icons/character_09.png', },
     Gismo_rings: { iconUrl: './icons/character_12.png', },
     DroppedItem: { iconUrl: medalIcon, },
-    StartPosition: { iconUrl: './icons/cockpit_12.png', },
+    Startposition: { iconUrl: './icons/cockpit_12.png', },
     GiantTower: {
       iconUrl: './icons/character2_15.png',
     },
@@ -414,16 +410,17 @@ async function get_marker_data(map, stage_name) {
   };
 
 
-	const coords = sf_remap([item.Position[0], -item.Position[2]], stage_name);
-		let valid_image = true;
-		  var iconUrl = item.MainStory ? iconList[item.TypeName + '_main']?.iconUrl : iconList[item.TypeName]?.iconUrl;
-		if ( item.MainStory ) {
-		console.log(iconUrl);
+		if (!item.position) {
+			return;
 		}
+	const coords = sf_remap([item?.position[0], -item?.position[2]], stage_name);
+		let valid_image = true;
+		  var iconUrl = item.MainStory ? iconList[item.type + '_main']?.iconUrl : iconList[item.type]?.iconUrl;
 		if (!iconUrl) {
 			// circle marker path
 			var radius = 8;
-			if (item.TypeName == 'Gismo_exp') {
+			let color = colorList[item.type];
+			if (item.type == 'Gismo_exp') {
 				const qty = parseInt(item.Quantity);
 				if (qty >= 15)  {
 					radius = 10;
@@ -435,6 +432,25 @@ async function get_marker_data(map, stage_name) {
 					radius = 6;
 				}
 			}
+			if (item.type == 'QuestBox') {
+				const qty = item.parameters.heightBoxNum * item.parameters.SideBoxNum * 
+					item.parameters.depthBoxNum * item.parameters.dropItemParam.dropNum;
+				radius = qty / 4;
+				switch(item.parameters.size) {
+					case "SMALL":
+						color = '#FFFF00';
+						break;
+					case "LARGE":
+						color = '#AA00AA';
+						break;
+					case "MIDDLE":
+						color = '#0000FF';
+						break;
+				}
+			}
+			if (item.type == 'AirFloor') {
+				return;
+			}
 
 			return (
               L.circleMarker(coords, {
@@ -443,7 +459,7 @@ async function get_marker_data(map, stage_name) {
 				  weight: 1,
 				  opacity: 0.8,
 				  fillOpacity: 0.7,
-				  fillColor: colorList[item.TypeName],
+				  fillColor: color,
                 })
               );
 		}
@@ -457,7 +473,7 @@ async function get_marker_data(map, stage_name) {
 			console.log('no img');
 		}
 			var size = 30;
-			if (item.TypeName == 'PortalBit' && item.FileName.includes('boss')) {
+			if (item.type == 'PortalBit' && file.includes('boss')) {
 				size = 20;
 			}
 			
@@ -480,7 +496,25 @@ async function get_marker_data(map, stage_name) {
 		});
 			return remappedPoints;
 	}
-	function rotatePolygon(position, dimensions, angle) {
+	function rotatePolygon(position, dimensions, quaternion) {
+		let axis = [0,0,0];
+		const magnitude = 2 * Math.acos(quaternion[3]);
+
+		if (1 - (quaternion[3] ** 2) < 0.000001) {
+			axis[0] = quaternion[0];
+			axis[1] = quaternion[1];
+			axis[2] = quaternion[2];
+		}
+		else {
+			const s = Math.sqrt(1 - (quaternion[3] ** 2));
+			axis[0] = quaternion[0] / s;
+			axis[1] = quaternion[1] / s;
+			axis[2] = quaternion[2] / s;
+
+		}
+
+		const angle = axis[1] * magnitude;
+
 		const x = position[0];
 		const z = -position[2];
 		const halfWidth = dimensions[0] * 0.5;
@@ -497,13 +531,37 @@ async function get_marker_data(map, stage_name) {
 		const bottomRightVertex = [rightOrigin[0] +heightX, rightOrigin[1] -heightZ] ;
 		const topRightVertex = [rightOrigin[0] -heightX,  rightOrigin[1] +heightZ] ;
 
+		if(isNaN(bottomLeftVertex)) {
+		}
 		return [bottomLeftVertex, topLeftVertex, topRightVertex, bottomRightVertex];
 	}
 	function getRectangle(item, color) {
-		if (!item.Dimensions) {
+		if (!item.parameters.extents && (!item.parameters.size ||  !Array.isArray(item.parameters.size) || item.parameters.size.length != 3)){
+			if (item.type != 'AirFloor') {
 			return;
+			}
 		}
-		const originalCoords = rotatePolygon(item.Position, item.Dimensions, item.Rotation[1]);
+
+		const quaternion = item.rotation ? item.rotation : [0,0,0,0];
+		let size = item.parameters.size ?? item.parameters.extents;
+		if (item.type == 'AirFloor') {
+			switch(item.parameters.size) {
+				case "LARGE":
+					size = [20,0,20];
+					break;
+				case "MIDDLE":
+					size = [10,0,10];
+					break;
+				case "SMALL":
+					size = [5,0,5];
+					break;
+			}
+
+		}
+		const originalCoords = rotatePolygon(item.position, size, quaternion);
+		if(isNaN(originalCoords[0][0])) {
+			console.log(item);
+		}
 		const bounds = sf_multi_remap(originalCoords, stage_name);
 		const formattedCoords = originalCoords.map((value) => {
 			return [Math.round(value[0]), Math.round(-value[1])];
@@ -514,66 +572,86 @@ async function get_marker_data(map, stage_name) {
 }
 
 function getPopup(item, filename) {
-		var model = item.Model ? '<p><span class="emphasize">model: </span>' + item.Model + '</p>' : '';
-		var contents = item.Contents ? '<p><span class="emphasize">contents: </span>' + item.Contents + '</p>' : '';
-		var dimensions = item.Dimensions ? '<p><span class="emphasize">dimensions: </span>' + item.Dimensions.join(', ') + '</p>' : '';
+		var model = item.parameters.name ? '<p><span class="emphasize">model: </span>' + item.parameters.name + '</p>' : '';
+		var contents = item.parameters?.dropItemParam?.dropItem ? '<p><span class="emphasize">contents: </span>' + item.parameters.dropItemParam.dropItem + '</p>' : '';
+		var dimensions = Array.isArray(item.parameters?.size) ? '<p><span class="emphasize">dimensions: </span>' + item.parameters.size.join(', ') + '</p>' : '';
 		var quantity = '';
-		if (item.TypeName.includes('rings')) {
+		if (item?.parameters.dropItemParam?.dropItem == 'RING') {
 			quantity = '<p><span class="emphasize">quantity: </span>' + 
-							(parseInt(item.Quantity) + item.Quantity2*10) + ' rings (' + item.Quantity2 + ' big, ' + item.Quantity + ' small)</p>';
+							(parseInt(item.parameters.dropItemParam.dropNum) + item.parameters.dropItemParam.dropSuperRingNum*10) + ' rings (' + item.parameters.dropItemParam.dropSuperRingNum + ' big, ' + item.parameters.dropItemParam.dropNum + ' small)</p>';
 		}
-	else if (item.TypeName.includes('Gismo_')) {
+	else if (item.type == 'QuestBox') {
+			quantity = '<p><span class="emphasize">quantity: </span>' + item.parameters.heightBoxNum * item.parameters.SideBoxNum * item.parameters.depthBoxNum * item.parameters.dropItemParam.dropNum;
+	}
+	/*
+	else if (item.type.includes('Gismo_')) {
 			quantity = item.Quantity ? '<p><span class="emphasize">quantity: </span>' + 
 							(	item.Contents == 'exp' ? item.Quantity*200 : item.Quantity) + '</p>' : '';
 		}
+		*/
 
-	const extraParams = item.Model ? '<p>' + JSON.stringify(item.ParameterValues, null, 2) + '</p>' : '';
 	/*
                 '<p><span class="emphasize">params:</span><br>' + item.ParameterData + '</p>' + 
 				extraParams 
 				*/
 return (
-                '<h1>' + item.ObjectName + '</h1>' +
+                '<h1>' + item.name + '</h1>' +
                 '<p><span class="emphasize">position:</span> ' +
-                Math.round(item.Position[0]) + ", " + Math.round(item.Position[1]) + ", " +
-                Math.round(item.Position[2]) + '</p>' +
+                Math.round(item.position[0]) + ", " + Math.round(item.position[1]) + ", " +
+                Math.round(item.position[2]) + '</p>' +
                 '<p><span class="emphasize">file:</span> ' + filename + "</p>" +
 				model + 
 				contents +
 				quantity +
-				dimensions 
-);
+				dimensions + '<pre>'+ JSON.stringify(item, null, 2) + '</pre>'
 
+);
 }
   const layerList = {};
   const colorList = {};
   var fetches = [];
 	var exp_boxes = [];
-  fetch('./json_data/' + stage_name + '/index.json').then((response) => response.json())
+	fetch('./hson/file_list.txt').then((response) => response.text())
     .then((json_files) => {
-      json_files.forEach(file => {
+      json_files.split("\n").filter(Boolean).filter(x => x.includes(stage_name)).forEach(file => {
         fetches.push(
-          fetch('./json_data/'+ stage_name + '/' + file + '.json')
+          fetch('./hson/' + file)
           .then((response) => response.json())
           .then((json) => {
-            json.forEach((item) => {
+			  if(!json?.objects) { 
+				  return ''; }
+            json.objects.forEach((item) => {
+				if(!item.position) {
+					return;
+				}
 				if (item.Contents == 'exp') {
-					exp_boxes.push({qty: item.Quantity, pos: item.Position, name: item.ObjectName});
+					exp_boxes.push({qty: item.Quantity, pos: item.position, name: item.name});
 				}
-			  if (!layerList.hasOwnProperty(item.TypeName)) {
-				layerList[item.TypeName] = L.layerGroup();
+			  if (!layerList.hasOwnProperty(item.type)) {
+				layerList[item.type] = L.layerGroup();
 				const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-				  colorList[item.TypeName] = '#' + randomColor;
+				  colorList[item.type] = '#' + randomColor;
 			  }
-				const marker = getMarker(item, file, colorList[item.TypeName]);
-				const popup = getPopup(item, item.FileName);
+				const filename = file.replace('.hson','');
+				const marker = getMarker(item, filename, colorList[item.type]);
+				const popup = getPopup(item, filename);
 
-				const box = getRectangle(item, colorList[item.TypeName]);
+				const box = getRectangle(item, colorList[item.type]);
 				if (box) {
-					box.addTo(layerList[item.TypeName]);
+					//if (item.type == 'BlockObject' && item.name.substring(item.name.length -2) < 70 || filename.includes('electric')) {
+						//return ;
+					//}
+					box.addTo(layerList[item.type]);
 				}
-
-             marker.bindPopup(popup).addTo(layerList[item.TypeName]);
+				if (marker) {
+					//if (item.type == 'BlockObject' && item.name.substring(item.name.length -2) < 70 || filename.includes('electric')) {
+						//return ;
+					//}
+					//if (item.type == 'Spring' && item.name.substring(item.name.length -2) > 21) {
+						//return ;
+					//}
+				 marker.bindPopup(popup, {maxWidth:500}).addTo(layerList[item.type]);
+				}
             });
           }));
       });
@@ -582,10 +660,10 @@ return (
         addControl(map, layerList);
 
 		const maxHeight = $(window).height();
-		  $('section.leaflet-control-layers-list').css('height', maxHeight-100);
+		  $('section.leaflet-control-layers-list').css('height', 'calc(100vh - 100px)');
 
 		const searchParams = new URLSearchParams(window.location.search);
-		selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
+		selectedMarkers = searchParams.getAll('markers') ?? 'Startposition';
 		  selectedMarkers.forEach((marker) => {
 			  if(layerList.hasOwnProperty(marker)) {
 				  layerList[marker].addTo(map);
@@ -624,7 +702,7 @@ return (
     searchParams.append('markers', encodeURIComponent(layerName));
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
-		let selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
+		let selectedMarkers = searchParams.getAll('markers') ?? 'Startposition';
 
 		  addLayerInfoControl(map, layerList, selectedMarkers, colorList);
 	},
@@ -650,13 +728,14 @@ return (
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
 	},
-}).catch(() => {
-	return '';
 });
-      }).catch(() => {
+}).catch((error) => {
+		  console.warn(error);
+		console.log('oh no 1');
 		  return '';
 	  });
     }).catch(() => {
+		console.log('oh no 2');
 		return '';
 	});
 
@@ -703,6 +782,7 @@ function resetMarkers(map, layers, selectedLayerNames) {
 
 }
 function addLayerInfoControl(map, layers, selectedLayerNames, colorList=null) {
+
 	if (selectedLayerNames.length == 0) {
 		return;
 	}
