@@ -182,7 +182,13 @@ function loadMap(stage_name) {
 
 $(document).ready(function() {
 	let poly_color = $("input[type=color]").val();
-	let loaded_paths = [];
+	let loaded_paths = new L.FeatureGroup();
+	loaded_paths.addTo(map);
+	loaded_paths.on('popupopen', function(event) {
+		const popup = event.popup;
+	//	popup.setContent('Coordinates: ' + sf_remap([popup.getLatLng().lng, popup.getLatLng().lat], stage_name, true));
+		console.log(popup);
+	});
 	$('div#coordinates>div').on("click", function() {
 		if($("#coordinates form").css('display') == 'none') {
 			$('div#coordinates form').css('display', 'flex');
@@ -201,7 +207,7 @@ $(document).ready(function() {
 		drawnItems.eachLayer((layer)=> {
 				layer.setStyle({ color: poly_color });
 		});
-		loaded_paths.forEach((layer)=> {
+		loaded_paths.eachLayer((layer)=> {
 				layer.setStyle({ color: poly_color });
 		});
 		/*
@@ -212,6 +218,7 @@ $(document).ready(function() {
 		});
 		*/
 	});
+	let line_tooltips = [];
 	$("#coordinates form").on("submit", function(event) {
 		event.preventDefault();
 
@@ -223,15 +230,16 @@ $(document).ready(function() {
 			if(Array.isArray(values) && values.length >= 3) {
 			// const remapped_coordinates = sf_remap([values[0], values[2]], stage_name);
 			latlngs.push([values[0], -values[2]]);
+			line_tooltips.push(row);
 			}
 		});
 
 		latlngs = sf_multi_remap(latlngs, stage_name);
 
-		loaded_paths.push(L.polyline(latlngs, {color: poly_color}).addTo(map));
+		L.polyline(latlngs, {color: poly_color}).addTo(loaded_paths);
 	});
 	$("#coordinates button").on("click", function() {
-		loaded_paths.forEach((layer)=> {
+		loaded_paths.eachLayer((layer)=> {
 			layer.remove();
 		});
 	});
@@ -247,7 +255,7 @@ let colorPicker = L.Control.extend({
 
     onAdd: function() {
       var menu = L.DomUtil.create('div', 'colors');
-      menu.innerHTML = '<input type="color" value="#0a80b0" >';
+      menu.innerHTML = '<input type="color" value="#8adeff" >';
 		return menu;
 	},});
 
