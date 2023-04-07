@@ -56,6 +56,7 @@ text-align: center;
 }
 
 #title {
+	z-index: 2200;
 	border: 2px solid rgba(0, 0, 0, .2);
 	text-align: center;
 	margin-left: 60px;
@@ -158,3 +159,49 @@ div#layerinfo {
 	width: 220px;
 }
 ul.rectangle_tooltip { list-style-type: none; margin: 0; padding: 0; }
+
+input[type=color] {
+	margin: 0px 2px;
+	width: 30px;
+}
+pre {
+	font-family: monospace;
+}
+
+
+#coordinates {
+	width: 80px;
+	height: 100px;
+	position: absolute;
+	margin-left: 80px;
+	top: 60px
+}
+#coordinates textarea {
+	height: 100%;
+}
+#coordinates form {
+	height: 500px;
+	display: flex;
+	flex-direction: column;
+	display: none;
+
+}
+#coordinates form div {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+}
+#coordinates div>* {
+	width: 50%;
+}
+
+#coordinates>div {
+	background-color: rgba(255,255,255,.8);
+	border-radius: 5px;
+	padding: 3px 0px;
+	text-align: center;
+	cursor: pointer;
+	box-shadow: rgba(0,0,0,.2) 2px 2px 4px;
+}
+#coordinates>div:hover {
+	background-color: rgba(220,220,220,.8);

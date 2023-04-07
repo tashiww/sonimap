@@ -95,6 +95,20 @@ const cyberStages = {"w6d01": {"Stage":"1-1", "RingMission": 150, "Time": 43,"Ex
 "w9d06": {"Stage":"1-7", "RingMission": 50, "Time": 85,"ExtremeTime": 55},
 "w9d07": {"Stage":"4-9", "RingMission": 120, "Time": 75,"ExtremeTime": 59}
 };
+	function sf_multi_remap(points, stage_name) {
+		let remappedPoints = [];
+		points.forEach((point) => {
+
+			if(!isNaN(point[0]) && !isNaN(point[1])) {
+			remappedPoint = sf_remap([point[0], point[1]], stage_name);
+			remappedPoints.push(remappedPoint);
+			}
+		});
+			return remappedPoints;
+	}
+
+ let drawnItems = new L.FeatureGroup();
+
 
 function loadMap(stage_name) {
 
@@ -117,7 +131,6 @@ function loadMap(stage_name) {
     maxZoom: 2,
   }).setView([1975, 2203], -1.5);
 
-	 var drawnItems = new L.FeatureGroup();
      map.addLayer(drawnItems);
      var drawControl = new L.Control.Draw({
 		 position: 'topleft',
@@ -161,17 +174,69 @@ function loadMap(stage_name) {
   drawnItems.addLayer(layer);
 });
 	map.addLayer(drawnItems);
+
   const bounds = [
     [0, 0],
     [4096, 4096]
   ];
 
-/*
 $(document).ready(function() {
-$('input[type=color]').on("input", function() {
-	var poly_color = $(this).val();
+	let poly_color = $("input[type=color]").val();
+	let loaded_paths = [];
+	$('div#coordinates>div').on("click", function() {
+		if($("#coordinates form").css('display') == 'none') {
+			$('div#coordinates form').css('display', 'flex');
+			$('div#coordinates').css('width', 150);
+			$(this).text( "Hide Inputs");
+		}
+		else {
+			$('div#coordinates form').css('display', 'none');
+			$('div#coordinates').css('width', 80);
+			$(this).text( "Load CSV");
+
+		}
+	});
+	$('input[type=color]').on("input", function() {
+		poly_color = $(this).val();
+		drawnItems.eachLayer((layer)=> {
+				layer.setStyle({ color: poly_color });
+		});
+		loaded_paths.forEach((layer)=> {
+				layer.setStyle({ color: poly_color });
+		});
+		/*
+		map.eachLayer(function(layer) {
+			if ( layer instanceof L.Polyline ) {
+				layer.setStyle({ color: poly_color });
+			}
+		});
+		*/
+	});
+	$("#coordinates form").on("submit", function(event) {
+		event.preventDefault();
+
+		const coordinates_array = $("#coordinates textarea").val()?.split('\n');
+
+		let latlngs = [];
+		coordinates_array.forEach((row) => {
+			const values = row.split(',');
+			if(Array.isArray(values) && values.length >= 3) {
+			// const remapped_coordinates = sf_remap([values[0], values[2]], stage_name);
+			latlngs.push([values[0], -values[2]]);
+			}
+		});
+
+		latlngs = sf_multi_remap(latlngs, stage_name);
+
+		loaded_paths.push(L.polyline(latlngs, {color: poly_color}).addTo(map));
+	});
+	$("#coordinates button").on("click", function() {
+		loaded_paths.forEach((layer)=> {
+			layer.remove();
+		});
+	});
+
 });
-})
 
 let colorPicker = L.Control.extend({
 
@@ -190,7 +255,6 @@ let colorPicker = L.Control.extend({
 this.colorPicker = new colorPicker();
 this.colorPicker.addTo(map);
 
-*/
   let MapSwitcher = L.Control.extend({
     _container: null,
     options: {
@@ -265,6 +329,32 @@ L.Control.textbox = L.Control.extend({
 	L.control.textbox({ position: 'topleft'}).addTo(map);
 
      map.addControl(drawControl);
+
+  let CoordinateInput = L.Control.extend({
+    _container: null,
+    options: {
+      position: 'topleft'
+    },
+
+		onAdd: function() {
+			
+		var text = L.DomUtil.create('div');
+		text.id = "coordinates";
+			let html = "<div>Load CSV</div>";
+				html += "<form action='' method='GET'>";
+		html += "<textarea></textarea>";
+		html += "<div><button type='submit'>Load path</button>";
+		html += "<button type='button'>Clear path</button></div> ";
+		html += "</form>";
+		text.innerHTML = html;
+		return text;
+		},
+
+	});
+  this.coordinates = new CoordinateInput();
+  this.coordinates.addTo(map);
+
+
   var img = L.imageOverlay('./base_img/' + stage_name + '.webp', bounds);
   img.addTo(map);
 
@@ -432,7 +522,7 @@ async function get_marker_data(map, stage_name) {
     Gismo_exp: { iconUrl: './icons/character_09.png', },
     Gismo_rings: { iconUrl: './icons/character_12.png', },
     DroppedItem: { iconUrl: medalIcon, },
-    Startposition: { iconUrl: './icons/cockpit_12.png', },
+    StartPosition: { iconUrl: './icons/cockpit_12.png', },
     GiantTower: {
       iconUrl: './icons/character2_15.png',
     },
@@ -450,24 +540,6 @@ async function get_marker_data(map, stage_name) {
 	const coords = sf_remap([item?.position[0], -item?.position[2]], stage_name);
 		let valid_image = true;
 		  var iconUrl = item.parameters?.purposeOfUse == 'Normal' ? iconList[item.type + '_main']?.iconUrl : iconList[item.type]?.iconUrl;
-			if (item.parameters?.dropItemParam?.dropItem) {
-				switch(item.parameters.dropItemParam.dropItem) {
-					case "SKILL_PIECE":
-						iconUrl = iconList.Gismo_exp.iconUrl;
-						break;
-					case "RING":
-						iconUrl = iconList.Gismo_rings.iconUrl;
-						break;
-					case "GUARD_SEED":
-						iconUrl = iconList.Gismo_def.iconUrl;
-						break;
-					case "POWER_SEED":
-						iconUrl = iconList.Gismo_atk.iconUrl;
-						break;
-
-				}
-
-			}
 		if (!iconUrl) {
 			// circle marker path
 			var radius = 8;
@@ -527,14 +599,6 @@ async function get_marker_data(map, stage_name) {
 		);
 		}
  	
-	}
-	function sf_multi_remap(points, stage_name) {
-		let remappedPoints = [];
-		points.forEach((point) => {
-			remappedPoint = sf_remap([point[0], point[1]], stage_name);
-			remappedPoints.push(remappedPoint);
-		});
-			return remappedPoints;
 	}
 	function rotatePolygon(position, dimensions, quaternion) {
 		let axis = [0,0,0];
@@ -611,8 +675,6 @@ async function get_marker_data(map, stage_name) {
 //		const rect = new L.polygon(bounds, {color: color, weight: 1}).bindPopup(tooltip);
  const rect = item.parameters.shape == 'Capsule' ? new L.circle(sf_remap([item.position[0], -item.position[2]], stage_name), {radius: sf_remap(item.parameters.radius, stage_name)}) : new L.polygon(bounds, {color: color, weight: 1}).bindPopup(tooltip);
 		if (item.parameters.shape == 'Capsule') {
-			console.log(rect);
-			console.log(item);
 		}
 		return rect;
 }
@@ -665,6 +727,24 @@ return (
 				if(!item.position) {
 					return;
 				}
+			if (item.parameters?.dropItemParam?.dropItem) {
+				switch(item.parameters.dropItemParam.dropItem) {
+					case "SKILL_PIECE":
+						item.type = "Gismo_exp";
+						break;
+					case "RING":
+						item.type = "Gismo_rings";
+						break;
+					case "GUARD_SEED":
+						item.type = "Gismo_def";
+						break;
+					case "POWER_SEED":
+						item.type = "Gismo_atk";
+						break;
+
+				}
+
+			}
 			  if (!layerList.hasOwnProperty(item.type)) {
 				layerList[item.type] = L.layerGroup();
 				const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
@@ -697,7 +777,7 @@ return (
 		  $('section.leaflet-control-layers-list').css('height', 'calc(100vh - 100px)');
 
 		const searchParams = new URLSearchParams(window.location.search);
-		selectedMarkers = searchParams.getAll('markers') ?? 'Startposition';
+		selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
 		  selectedMarkers.forEach((marker) => {
 			  if(layerList.hasOwnProperty(marker)) {
 				  layerList[marker].addTo(map);
@@ -736,7 +816,7 @@ return (
     searchParams.append('markers', encodeURIComponent(layerName));
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
-		let selectedMarkers = searchParams.getAll('markers') ?? 'Startposition';
+		let selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
 
 		  addLayerInfoControl(map, layerList, selectedMarkers, colorList);
 	},
