@@ -39,6 +39,9 @@ function sf_remap(coords, stage_name, mouse = false) {
   };
   const origin = origins[stage_name].origin;
   const scale_factor = origins[stage_name].scale_factor;
+	if(!Array.isArray(coords)) {
+		return coords / scale_factor;
+	}
   if (mouse) {
     const new_x = Math.round((coords[0] - origin[0]) / scale_factor);
     const new_y = Math.round((-coords[1] + origin[1]) / scale_factor);
@@ -604,7 +607,13 @@ async function get_marker_data(map, stage_name) {
 			return [Math.round(value[0]), Math.round(-value[1])];
 		});
 		const tooltip = "Corners: <ul class='rectangle_tooltip'><li> " + formattedCoords.join("</li><li>") + "</li></ul>";
-		const rect = new L.polygon(bounds, {color: color, weight: 1}).bindPopup(tooltip);
+
+//		const rect = new L.polygon(bounds, {color: color, weight: 1}).bindPopup(tooltip);
+ const rect = item.parameters.shape == 'Capsule' ? new L.circle(sf_remap([item.position[0], -item.position[2]], stage_name), {radius: sf_remap(item.parameters.radius, stage_name)}) : new L.polygon(bounds, {color: color, weight: 1}).bindPopup(tooltip);
+		if (item.parameters.shape == 'Capsule') {
+			console.log(rect);
+			console.log(item);
+		}
 		return rect;
 }
 
@@ -663,10 +672,16 @@ return (
 			  }
 				const filename = file.replace('.hson','');
 				const marker = getMarker(item, filename, colorList[item.type]);
+				if (item.type == 'Tails') {
+					console.log(marker);
+				}
 				const popup = getPopup(item, filename);
 
 				const box = getRectangle(item, colorList[item.type]);
-				if (box) {
+				if (box && !marker?.options?.img?.url) {
+					if(box.radius) {
+						console.log(box);
+					}
 					box.bindPopup(popup, {maxWidth: 550}).addTo(layerList[item.type]);
 				}
 				else if (marker) {
