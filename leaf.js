@@ -193,7 +193,7 @@ $(document).ready(function() {
 	$('div#coordinates>div').on("click", function() {
 		if($("#coordinates form").css('display') == 'none') {
 			$('div#coordinates form').css('display', 'flex');
-			$('div#coordinates').css('width', 150);
+			$('div#coordinates').css('width', 250);
 			$(this).text( "Hide Inputs");
 		}
 		else {
