@@ -46,7 +46,7 @@ text-align: center;
 	font-size: 1.2em;
 	margin: 6px 0;
 }
-.leaflet-popup .emphasize {
+.emphasize {
 	font-weight: bold;
 }
 .leaflet-popup-content{
