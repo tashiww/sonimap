@@ -183,12 +183,13 @@ function loadMap(stage_name) {
 $(document).ready(function() {
 	let poly_color = $("input[type=color]").val();
 	let loaded_paths = new L.FeatureGroup();
+	let path_markers = new L.FeatureGroup();
 	loaded_paths.addTo(map);
-	loaded_paths.on('popupopen', function(event) {
-		const popup = event.popup;
-	//	popup.setContent('Coordinates: ' + sf_remap([popup.getLatLng().lng, popup.getLatLng().lat], stage_name, true));
-		console.log(popup);
-	});
+	path_markers.addTo(map);
+
+		let latlngs = [];
+		let line_tooltips = [];
+
 	$('div#coordinates>div').on("click", function() {
 		if($("#coordinates form").css('display') == 'none') {
 			$('div#coordinates form').css('display', 'flex');
@@ -210,38 +211,75 @@ $(document).ready(function() {
 		loaded_paths.eachLayer((layer)=> {
 				layer.setStyle({ color: poly_color });
 		});
-		/*
-		map.eachLayer(function(layer) {
-			if ( layer instanceof L.Polyline ) {
-				layer.setStyle({ color: poly_color });
-			}
-		});
-		*/
 	});
-	let line_tooltips = [];
+
+	function getMinMax(array, property) {
+		// return min and max value for property in array 
+		let min = array[0][property];
+		let max = array[0][property];
+
+		array.forEach((item) => {
+			const val = item[property];
+			min = val < min ? val : min;
+			max = val > max ? val : max;
+		});
+		return {min: min, max: max};
+	}
+
 	$("#coordinates form").on("submit", function(event) {
 		event.preventDefault();
 
 		const coordinates_array = $("#coordinates textarea").val()?.split('\n');
 
-		let latlngs = [];
 		coordinates_array.forEach((row) => {
 			const values = row.split(',');
 			if(Array.isArray(values) && values.length >= 3) {
 			// const remapped_coordinates = sf_remap([values[0], values[2]], stage_name);
 			latlngs.push([values[0], -values[2]]);
-			line_tooltips.push(row);
+
+			line_tooltips.push({x: values[0], y: parseInt(values[1]), z: values[2], timestamp: values[3] ?? null});
 			}
 		});
 
 		latlngs = sf_multi_remap(latlngs, stage_name);
+		new L.polyline(latlngs, {color: poly_color}).addTo(loaded_paths);
+		const {min, max} = getMinMax(line_tooltips, 'y');
 
-		L.polyline(latlngs, {color: poly_color}).addTo(loaded_paths);
+		latlngs.forEach((latlng, index) => {
+			const {x,y,z, timestamp} = line_tooltips[index];
+			const color_intensity = Math.min(120, ((y - min) / 800 * 120))+ 240;
+			if (timestamp) {
+				timestamp_text = "<p><span class='emphasize'>Timestamp: </span> " + timestamp / 1000 + "</p>";
+			}
+			const tooltip = "<p><span class='emphasize'>X, Y, Z:</span> " + [x,y,z].join(', ') + "</p>" + ( timestamp? timestamp_text : '');
+			L.circleMarker(latlng, {
+				radius: 2,
+				weight: 1,
+
+				color: 'hsl('+color_intensity+',100%,50%)',
+				zIndex: 1200,
+			}).bindPopup(tooltip).addTo(path_markers);
+
+
+		});
 	});
-	$("#coordinates button").on("click", function() {
+	$("#coordinates div>button").on("click", function() {
 		loaded_paths.eachLayer((layer)=> {
 			layer.remove();
 		});
+		path_markers.eachLayer((layer)=> {
+			layer.remove();
+		});
+		latlngs = [];
+		line_tooltips = [];
+	});
+	$("#coordinates button#toggle_path_markers").on("click", function() {
+		if(map.hasLayer(path_markers)) {
+			path_markers.remove();
+		}
+		else {
+			path_markers.addTo(map);
+		}
 	});
 
 });
@@ -318,8 +356,8 @@ L.Control.textbox = L.Control.extend({
 			
 		var text = L.DomUtil.create('div');
 		text.id = "title";
-		text.innerHTML = "<h1>SoniMap v0.5.1</h1>";
-		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map</p>";
+		text.innerHTML = "<h1>SoniMap</h1>";
+		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map. v0.5.4</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
 		text.innerHTML += "<h2>Limitations</h2>";
@@ -353,6 +391,7 @@ L.Control.textbox = L.Control.extend({
 		html += "<textarea></textarea>";
 		html += "<div><button type='submit'>Load path</button>";
 		html += "<button type='button'>Clear path</button></div> ";
+		html += "<button id='toggle_path_markers' type='button'>Toggle path markers</button>";
 		html += "</form>";
 		text.innerHTML = html;
 		return text;
@@ -580,6 +619,7 @@ async function get_marker_data(map, stage_name) {
 				  opacity: 0.8,
 				  fillOpacity: 0.7,
 				  fillColor: color,
+				  riseOnHover: true,
                 })
               );
 		}
@@ -760,15 +800,11 @@ return (
 			  }
 				const filename = file.replace('.hson','');
 				const marker = getMarker(item, filename, colorList[item.type]);
-				if (item.type == 'Tails') {
-					console.log(marker);
-				}
 				const popup = getPopup(item, filename);
 
 				const box = getRectangle(item, colorList[item.type]);
 				if (box && !marker?.options?.img?.url) {
 					if(box.radius) {
-						console.log(box);
 					}
 					box.bindPopup(popup, {maxWidth: 550}).addTo(layerList[item.type]);
 				}
