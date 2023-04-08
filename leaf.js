@@ -193,7 +193,7 @@ $(document).ready(function() {
 	$('div#coordinates>div').on("click", function() {
 		if($("#coordinates form").css('display') == 'none') {
 			$('div#coordinates form').css('display', 'flex');
-			$('div#coordinates').css('width', 150);
+			$('div#coordinates').css('width', 250);
 			$(this).text( "Hide Inputs");
 		}
 		else {
@@ -357,7 +357,7 @@ L.Control.textbox = L.Control.extend({
 		var text = L.DomUtil.create('div');
 		text.id = "title";
 		text.innerHTML = "<h1>SoniMap</h1>";
-		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map. v0.5.4</p>";
+		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map. v0.5.5</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
 		text.innerHTML += "<h2>Limitations</h2>";
