@@ -36,6 +36,10 @@ function sf_remap(coords, stage_name, mouse = false) {
       origin: [2040, 706],
       scale_factor: 0.9761
     },
+    w1r06: {
+      origin: [2040, 706],
+      scale_factor: 0.9761
+    },
   };
   const origin = origins[stage_name].origin;
   const scale_factor = origins[stage_name].scale_factor;
@@ -57,6 +61,7 @@ var MapNames = {
   chaos: 'w3r01',
   rhea: 'w1r05',
   ouranos: 'w1r04',
+  another: 'w1r06',
 };
 
 var mapsPlaceholder = [];
@@ -314,7 +319,8 @@ this.colorPicker.addTo(map);
         '<li class=' + ( stage_name == 'w2r01' ? '"selected"' : '""' ) + ' onclick="loadMap(\'w2r01\')">Ares</li>' +
         '<li class=' + ( stage_name == 'w3r01' ? '"selected"' : '""' ) + ' onclick="loadMap(\'w3r01\')">Chaos</li>' +
         '<li class=' + ( stage_name == 'w1r05' ? '"selected"' : '""' ) + ' onclick="loadMap(\'w1r05\')">Rhea</li>' +
-        '<li class=' + ( stage_name == 'w1r04' ? '"selected"' : '""' ) + ' onclick="loadMap(\'w1r04\')">Ouranos</li></ul>';
+        '<li class=' + ( stage_name == 'w1r04' ? '"selected"' : '""' ) + ' onclick="loadMap(\'w1r04\')">Ouranos</li>'+
+        '<li class=' + ( stage_name == 'w1r06' ? '"selected"' : '""' ) + ' onclick="loadMap(\'w1r06\')">Another</li></ul>';
       return menu;
     },
 
