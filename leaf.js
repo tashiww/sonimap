@@ -363,7 +363,7 @@ L.Control.textbox = L.Control.extend({
 		var text = L.DomUtil.create('div');
 		text.id = "title";
 		text.innerHTML = "<h1>SoniMap</h1>";
-		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map. v0.5.6</p>";
+		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map. v0.6.6</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
 		text.innerHTML += "<h2>Limitations</h2>";
