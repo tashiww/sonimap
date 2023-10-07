@@ -363,7 +363,7 @@ L.Control.textbox = L.Control.extend({
 		var text = L.DomUtil.create('div');
 		text.id = "title";
 		text.innerHTML = "<h1>SoniMap</h1>";
-		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map. v0.6.6</p>";
+		text.innerHTML += "<p style='text-align: center;'>Yet another Sonic Frontiers map. v0.6.7</p>";
 		text.innerHTML += "<h2>Instructions</h2>";
 		text.innerHTML += "<p>Choose a map from the lower-left Map menu. Then, enable objects from the Object Selector menu on the right.</p>";
 		text.innerHTML += "<h2>Limitations</h2>";
@@ -799,6 +799,9 @@ return (
 				}
 
 			}
+			if (item.parameters?.type) {
+				item.type += " " + item.parameters.type;
+			}
 			  if (!layerList.hasOwnProperty(item.type)) {
 				layerList[item.type] = L.layerGroup();
 				const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
@@ -827,7 +830,7 @@ return (
 		  $('section.leaflet-control-layers-list').css('height', 'calc(100vh - 100px)');
 
 		const searchParams = new URLSearchParams(window.location.search);
-		selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
+		selectedMarkers = searchParams.getAll('markers').map((layerName) => decodeURI(layerName)) ?? 'StartPosition';
 		  selectedMarkers.forEach((marker) => {
 			  if(layerList.hasOwnProperty(marker)) {
 				  layerList[marker].addTo(map);
@@ -866,7 +869,7 @@ return (
     searchParams.append('markers', encodeURIComponent(layerName));
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
-		let selectedMarkers = searchParams.getAll('markers') ?? 'StartPosition';
+		let selectedMarkers = searchParams.getAll('markers').map(layerName => decodeURI(layerName)) ?? 'StartPosition';
 
 		  addLayerInfoControl(map, layerList, selectedMarkers, colorList);
 	},
